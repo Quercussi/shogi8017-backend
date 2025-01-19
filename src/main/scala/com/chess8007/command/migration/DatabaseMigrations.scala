@@ -17,8 +17,8 @@ object DatabaseMigrations extends LazyLogging {
   def createFly4sResource(dbConfig: DatabaseConfig): Resource[IO, Fly4s[IO]] =
     Fly4s.make[IO](
       url = dbConfig.connectionUrl,
-      user = dbConfig.user,
-      password = dbConfig.password.map(_.toCharArray),
+      user = Some(dbConfig.user),
+      password = Some(dbConfig.password.toCharArray),
       config = Fly4sConfig.default
         .withGroup(true)
         .withOutOfOrder(false)

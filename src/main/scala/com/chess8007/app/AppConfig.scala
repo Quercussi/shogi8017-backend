@@ -18,8 +18,8 @@ case class DatabaseConfig(
   host: String,
   port: Int,
   databaseName: String,
-  user: Option[String],
-  password: Option[String],
+  user: String,
+  password: String,
   migrationsTable: String,
   migrationsLocations: List[String]
 ) derives ConfigReader {
@@ -30,8 +30,8 @@ case class DatabaseConfig(
        |  Host: $host
        |  Port: $port
        |  Database Name: $databaseName
-       |  User: ${user.getOrElse("None")}
-       |  Password: ${password.map(_ => "****").getOrElse("None")}
+       |  User: ${user}
+       |  Password: ${password.map(_ => "****")}
        |  Migrations Table: $migrationsTable
        |  Migrations Locations: ${migrationsLocations.mkString(", ")}
        |""".stripMargin
