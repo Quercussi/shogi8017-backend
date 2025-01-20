@@ -34,6 +34,9 @@ libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-core"     % doobieVersion,
   "org.tpolecat" %% "doobie-mysql"    % doobieVersion,
   "org.tpolecat" %% "doobie-hikari"   % doobieVersion,
+
+  "org.mindrot" % "jbcrypt" % "0.4",
+
   "dev.profunktor" %% "redis4cats-effects" % redis4catsVersion,
   "dev.profunktor" %% "redis4cats-streams" % redis4catsVersion,
 

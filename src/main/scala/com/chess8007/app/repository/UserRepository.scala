@@ -3,7 +3,7 @@ package com.chess8007.app.repository
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import com.chess8007.app.database.DatabaseResource
-import com.chess8007.app.models.UserModel
+import com.chess8007.app.models.{UserModel, UserModelWithPassword}
 import doobie.*
 import doobie.implicits.*
 
@@ -28,12 +28,12 @@ class UserRepository(db: DatabaseResource) {
     }
   }
 
-  def findUserByCredentials(payload: FindUserByCredentialsPayload): IO[Either[Throwable, Option[UserModel]]] = {
+  def findUserByUsername(payload: FindUserByUsernamePayload): IO[Either[Throwable, Option[UserModelWithPassword]]] = {
     db.use { transactor =>
-      val (username, hashedPassword) = (payload.username, payload.hashedPassword)
-      val query: Query0[UserModel] = sql"SELECT * FROM users u WHERE (u.username = $username) AND (u.password = $hashedPassword)"
-                                    .query[UserModel]
-      val result: ConnectionIO[Option[UserModel]] = query.option
+      val (username) = (payload.username)
+      val query: Query0[UserModelWithPassword] = sql"SELECT * FROM users u WHERE (u.username = $username)"
+                                    .query[UserModelWithPassword]
+      val result: ConnectionIO[Option[UserModelWithPassword]] = query.option
       result.transact(transactor).attempt
     }
   }
