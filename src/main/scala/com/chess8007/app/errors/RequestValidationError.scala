@@ -1,0 +1,12 @@
+package com.chess8007.app.errors
+
+sealed trait RequestValidationError extends Exception
+
+sealed trait AuthenticationError extends RequestValidationError
+case object UserNotFound extends AuthenticationError
+case object IncorrectUsernameOrPassword extends AuthenticationError
+case object InvalidProvidedCredentials extends AuthenticationError
+case object InvalidCredentials extends AuthenticationError
+
+sealed trait AuthorizationError extends RequestValidationError
+case object UserUnauthorized extends AuthorizationError

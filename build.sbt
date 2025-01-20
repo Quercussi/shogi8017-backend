@@ -7,7 +7,10 @@ ThisBuild / version := "0.1.0-SNAPSHOT"
 
 ThisBuild / scalaVersion := "3.5.2"
 
-val http4sVersion = "1.0.0-M44"
+val http4sVersion = "0.23.30"
+val jwtHttp4sVersion = "2.0.2"
+val jwtScalaVersion = "10.0.1"
+val doobieVersion = "1.0.0-RC6"
 val redis4catsVersion = "1.7.2"
 val pureconfigVersion = "0.17.8"
 
@@ -18,11 +21,19 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl"          % http4sVersion,
   "org.http4s" %% "http4s-server"       % http4sVersion,
   "org.http4s" %% "http4s-ember-server" % http4sVersion,
+  "org.http4s" %% "http4s-circe"        % http4sVersion,
+
+  "dev.profunktor" %% "http4s-jwt-auth"    % jwtHttp4sVersion,
+  "com.github.jwt-scala"    %% "jwt-core"            % jwtScalaVersion,
+  "com.github.jwt-scala"    %% "jwt-circe"           % jwtScalaVersion,
 
   "com.typesafe" % "config" % "1.4.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
 
+  "org.tpolecat" %% "doobie-core"     % doobieVersion,
+  "org.tpolecat" %% "doobie-mysql"    % doobieVersion,
+  "org.tpolecat" %% "doobie-hikari"   % doobieVersion,
   "dev.profunktor" %% "redis4cats-effects" % redis4catsVersion,
   "dev.profunktor" %% "redis4cats-streams" % redis4catsVersion,
 
