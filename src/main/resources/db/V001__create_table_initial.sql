@@ -1,20 +1,21 @@
 CREATE TABLE `users` (
-    `userId` CHAR(36) NOT NULL PRIMARY KEY,
-    `username` VARCHAR(63) NOT NULL,
+    `userId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    `username` VARCHAR(63) NOT NULL UNIQUE ,
     `password` VARCHAR(255) NOT NULL,
     `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX `idx_userId` (`userId`)
+    INDEX `idx_userId` (`userId`),
+    INDEX `idx_username` (`username`)
 );
 
 CREATE TABLE `boards` (
-    `boardId` CHAR(36) NOT NULL PRIMARY KEY,
+    `boardId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE `games` (
-    `gameId` CHAR(36) NOT NULL PRIMARY KEY,
+    `gameId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     `boardId` CHAR(36) NOT NULL,
     `whiteUserId` CHAR(36),
     `blackUserId` CHAR(36),
@@ -30,7 +31,7 @@ CREATE TABLE `games` (
 );
 
 CREATE TABLE `boardHistories` (
-    `boardHistoryId` CHAR(36) NOT NULL PRIMARY KEY,
+    `boardHistoryId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     `boardId` CHAR(36) NOT NULL,
     `moveNumber` INT NOT NULL,
     `moveFromX` INT NOT NULL,
@@ -47,7 +48,7 @@ CREATE TABLE `boardHistories` (
 );
 
 CREATE TABLE `boardStateCaches` (
-    `boardStateCacheId` CHAR(36) NOT NULL PRIMARY KEY,
+    `boardStateCacheId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     `boardId` CHAR(36) NOT NULL,
     `piece` ENUM('KING', 'QUEEN', 'ROOK', 'BISHOP', 'KNIGHT', 'PAWN') NOT NULL,
     `playerTurn` ENUM('WHITE', 'BLACK') NOT NULL,
