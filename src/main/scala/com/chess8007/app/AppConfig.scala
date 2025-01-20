@@ -3,7 +3,7 @@ package com.chess8007.app
 import cats.effect.IO
 import pureconfig.{ConfigReader, ConfigSource}
 
-case class AppConfig(app: App, database: DatabaseConfig, env: Env) derives ConfigReader
+case class AppConfig(app: App, database: DatabaseConfig, jwt: JwtConfig, env: Env) derives ConfigReader
 
 object AppConfig {
   def loadConfig(namespace: String): IO[Either[Throwable, AppConfig]] = IO {
@@ -37,6 +37,14 @@ case class DatabaseConfig(
        |""".stripMargin
   }
 }
+
+case class JwtConfig(
+  algorithm: Option[String],
+  accessTokenSecret: String,
+  accessTokenTtlSeconds: Int,
+  refreshTokenSecret: String,
+  refreshTokenTtlSeconds: Int,
+) derives ConfigReader
 
 case class App(name: String, port: Int, version: String) derives ConfigReader
 
