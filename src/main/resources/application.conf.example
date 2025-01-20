@@ -1,0 +1,30 @@
+chess8007 {
+  app {
+    name =
+    port =
+    version =
+  }
+
+  database {
+    host =
+    port =
+    database-name =
+    user =
+    password =
+    database =
+    migrations-locations =
+    migrations-table =
+  }
+
+  jwt {
+    algorithm =
+    access-token-secret =
+    access-token-ttl-seconds =
+    refresh-token-secret =
+    refresh-token-ttl-seconds =
+  }
+
+  env {
+    default =
+  }
+}
