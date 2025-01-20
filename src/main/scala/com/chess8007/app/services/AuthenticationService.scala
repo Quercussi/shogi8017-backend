@@ -1,25 +1,18 @@
 package com.chess8007.app.services
 
-import cats.Applicative
-import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
-import cats.effect.kernel.Resource
-import cats.effect.{IO, MonadCancelThrow}
-import cats.syntax.functor._
-import com.chess8007.app.database.DatabaseResource
-import com.chess8007.app.errors.{AuthenticationError, IncorrectUsernameOrPassword}
+import cats.effect.IO
 import com.chess8007.app.JwtConfig
+import com.chess8007.app.database.DatabaseResource
+import com.chess8007.app.errors.IncorrectUsernameOrPassword
 import com.chess8007.app.jwtClaimModels.{EmptyClaimModel, UserClaimModel}
 import com.chess8007.app.models.UserModel
 import com.chess8007.app.repository.UserRepository
 import com.chess8007.app.routes.{UserLoginPayload, UserLoginResponse}
-import doobie.hikari.HikariTransactor
-import doobie.util.transactor.Transactor
 import pdi.jwt.{JwtAlgorithm, JwtCirce}
 
-class AuthenticationService(jwtConfig: JwtConfig, db: DatabaseResource){
+class AuthenticationService(jwtConfig: JwtConfig, userRepository: UserRepository) {
   private val jwtAlgorithm = JwtAlgorithm.fromString(jwtConfig.algorithm.getOrElse("HS256"))
-  private val userService = UserService.of(db)
+  private val userService = UserService.of(userRepository)
 
   private def getAccessToken(userModel: UserModel): String = {
     val userClaimModel = UserClaimModel.of(userModel)
@@ -61,6 +54,6 @@ class AuthenticationService(jwtConfig: JwtConfig, db: DatabaseResource){
 }
 
 object AuthenticationService {
-  def of(jwtConfig: JwtConfig, db: DatabaseResource): AuthenticationService = new AuthenticationService(jwtConfig, db)
+  def of(jwtConfig: JwtConfig, userRepository: UserRepository): AuthenticationService = new AuthenticationService(jwtConfig, userRepository)
 }
 

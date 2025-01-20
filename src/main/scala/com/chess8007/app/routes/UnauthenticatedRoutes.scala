@@ -10,8 +10,7 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.dsl.io.*
 
-class UnauthenticatedRoutes(db: DatabaseResource) {
-  private val userService = UserService.of(db)
+class UnauthenticatedRoutes(userService: UserService) {
 
   private def signUpUser(payload: UserSignUpPayload): IO[Either[Throwable, UserSignUpResponse]] = {
     userService.signUpUser(payload).map { userEither => 
@@ -35,5 +34,5 @@ class UnauthenticatedRoutes(db: DatabaseResource) {
 }
 
 object UnauthenticatedRoutes {
-  def of(db: DatabaseResource): UnauthenticatedRoutes = new UnauthenticatedRoutes(db)
+  def of(userService: UserService): UnauthenticatedRoutes = new UnauthenticatedRoutes(userService)
 }

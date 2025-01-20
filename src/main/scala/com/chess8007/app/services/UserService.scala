@@ -8,12 +8,10 @@ import com.chess8007.app.repository.{CreateUserPayload, FindUserByUsernamePayloa
 import com.chess8007.app.routes.{UserLoginPayload, UserSignUpPayload}
 import org.mindrot.jbcrypt.BCrypt
 
-class UserService(db: DatabaseResource) {
-  private val userRepo = UserRepository.of(db)
-
+class UserService(userRepository: UserRepository) {
   def authenticateUser(payload: UserLoginPayload): IO[Either[Throwable, Option[UserModel]]] = {
     val findUserByCredentialsPayload = FindUserByUsernamePayload(payload.username)
-    val userOptionIO = userRepo.findUserByUsername(findUserByCredentialsPayload)
+    val userOptionIO = userRepository.findUserByUsername(findUserByCredentialsPayload)
 
     userOptionIO.map(userEither => userEither.flatMap {
       case Some(user) =>
@@ -28,10 +26,10 @@ class UserService(db: DatabaseResource) {
   def signUpUser(payload: UserSignUpPayload): IO[Either[Throwable, UserModel]] = {
     val hashedPassword = BCrypt.hashpw(payload.password, BCrypt.gensalt());
     val createUserPayload = CreateUserPayload(payload.username, hashedPassword)
-    userRepo.createUser(createUserPayload)
+    userRepository.createUser(createUserPayload)
   }
 }
 
 object UserService {
-  def of(db: DatabaseResource): UserService = new UserService(db)
+  def of(userRepository: UserRepository): UserService = new UserService(userRepository)
 }

@@ -12,8 +12,7 @@ import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.dsl.io.*
 import org.http4s.{HttpRoutes, Response, ResponseCookie}
 
-case class AuthenticationRoutesV2(jwtConfig: JwtConfig, db: DatabaseResource) {
-  private val authenticationService = AuthenticationService.of(jwtConfig, db)
+case class AuthenticationRoutesV2(authenticationService: AuthenticationService) {
 
   def getLoginRoute: HttpRoutes[IO] = HttpRoutes.of {
     case req @ POST -> Root / "api" / "login" =>
@@ -39,5 +38,5 @@ case class AuthenticationRoutesV2(jwtConfig: JwtConfig, db: DatabaseResource) {
 }
 
 object AuthenticationRoutesV2 {
-  def of(jwtConfig: JwtConfig, db: DatabaseResource) = new AuthenticationRoutesV2(jwtConfig, db)
+  def of(authenticationService: AuthenticationService) = new AuthenticationRoutesV2(authenticationService)
 }
