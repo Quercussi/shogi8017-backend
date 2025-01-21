@@ -6,6 +6,7 @@ import cats.syntax.all.*
 import com.chess8007.app.errors.*
 import GameEvent.{CHECK, CHECKMATE, DEAD_POSITION, STALEMATE}
 import com.chess8007.app.services.*
+import com.chess8007.app.services.logics.Piece.validateAndApplyMove
 import com.chess8007.app.services.logics.PieceType.{BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK}
 import com.chess8007.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
 
@@ -65,7 +66,7 @@ object Board {
       Validated.cond(getKingPosition(board, player).nonEmpty, (), NoKingError)
     }
 
-    def validateMove(player: Player, playerAction: PlayerAction): Validated[MoveValidationError, Unit] = {
+    def validatePlayerAction(player: Player, playerAction: PlayerAction): Validated[MoveValidationError, Unit] = {
       val (from, to) = playerAction.getFromToPositions
 
       val errors = List(
@@ -84,33 +85,8 @@ object Board {
       Validated.cond(board.pieces.contains(from), board.pieces(from), UnoccupiedPosition)
     }
 
-    def processMove(board: Board, playerAction: PlayerAction)(piece: Piece): (Piece, Validated[GameValidationError, BoardStateTransition]) = {
-      (piece, piece.getBoardTransition(board, playerAction).andThen((stateTransitionList, algebraicNotation) => {
-        val newPiecesMap = stateTransitionList.foldLeft(board.pieces) { (acc, transition) =>
-          val (action, position, player, pieceType) = transition
-          action match {
-            case BoardAction.REMOVE => acc - position
-            case BoardAction.ADD =>
-              val piece = pieceType match {
-                case PAWN => Pawn(player).withMoved
-                case ROOK => Rook(player).withMoved
-                case BISHOP => Bishop(player).withMoved
-                case KNIGHT => Knight(player).withMoved
-                case KING => King(player).withMoved
-                case QUEEN => Queen(player).withMoved
-              }
-              acc + (position -> piece)
-          }
-        }
-
-        val (from, to, promoteTo) = playerAction.getFields
-        val newBoard = board.copy(
-          pieces = newPiecesMap,
-          lastMove = Some(Move(player, from, to, piece, promoteTo))
-        )
-
-        Valid((newBoard, stateTransitionList, algebraicNotation))
-      }))
+    def processMove(board: Board, player: Player, playerAction: PlayerAction)(piece: Piece): (Piece, Validated[GameValidationError, BoardStateTransition]) = {
+      (piece, validateAndApplyMove(piece, board, playerAction))
     }
 
     def processGameEvent(inputTuple: (Piece, Validated[GameValidationError, BoardStateTransition])): Validated[GameValidationError, MoveResult] = {
@@ -128,21 +104,26 @@ object Board {
     }
 
     def checkGameEvent(board: Board, player: Player): Option[GameEvent] = {
-      val opponent = if player == WHITE_PLAYER then BLACK_PLAYER else WHITE_PLAYER
-      if (isChecked(board, opponent)) {
-        if (isCheckmated(board, opponent)) Some(CHECKMATE)
-        else Some(CHECK)
+      lazy val opponent = if (player == WHITE_PLAYER) BLACK_PLAYER else WHITE_PLAYER
+      lazy val checked = isChecked(board, opponent)
+      lazy val escape = hasEscape(board, opponent)
+      lazy val stalemate = isStalemate(board, opponent)
+      lazy val deadPosition = isDeadPosition(board)
+
+      (checked, escape, stalemate, deadPosition) match {
+        case (true, true, _, _) => Some(CHECK)
+        case (true, false, _, _) => Some(CHECKMATE)
+        case (_, _, true, _) => Some(STALEMATE)
+        case (_, _, _, true) => Some(DEAD_POSITION)
+        case _ => None
       }
-      else if (isStalemate(board, opponent)) Some(STALEMATE)
-      else if (isDeadPosition(board)) Some(DEAD_POSITION)
-      else None
     }
 
     val (from, to) = playerAction.getFromToPositions
     validateGameState(player)
-      .andThen(_ => validateMove(player, playerAction))
+      .andThen(_ => validatePlayerAction(player, playerAction))
       .andThen(_ => validatePieceExistence(from))
-      .andThen(processGameEvent compose processMove(board, playerAction))
+      .andThen(processGameEvent compose processMove(board, player, playerAction))
   }
 
   private def isOutOfTurn(lastMove: Option[Move], currentPlayer: Player): Boolean =
@@ -187,30 +168,55 @@ object Board {
     isKingVsKing || isKingAndBishopVsKingOrKingAndKnightVsKing || isKingAndBishopVsKingAndBishop
   }
 
+  def processAction(pieceMap: Map[Position, Piece])(stateTransitionList: StateTransitionList): Map[Position, Piece] = {
+    stateTransitionList.foldLeft(pieceMap) { (acc, transition) =>
+      val (action, position, player, pieceType) = transition
+      action match {
+        case BoardAction.REMOVE => acc - position
+        case BoardAction.ADD =>
+          val piece = pieceType match {
+            case PAWN => Pawn(player).withMoved
+            case ROOK => Rook(player).withMoved
+            case BISHOP => Bishop(player).withMoved
+            case KNIGHT => Knight(player).withMoved
+            case KING => King(player).withMoved
+            case QUEEN => Queen(player).withMoved
+          }
+          acc + (position -> piece)
+      }
+    }
+  }
+
+  def getPlayerActionAsMove(player: Player, piece: Piece, playerAction: PlayerAction): Move = {
+    val (from, to, promoteTo) = playerAction.getFields
+    Move(player, from, to, piece, promoteTo)
+  }
+
   def isChecked(board: Board, player: Player): Boolean = {
     val kingPosition = getKingPosition(board, player)
     val k = kingPosition.exists(_.isUnderAttack(board, player))
     kingPosition.exists(_.isUnderAttack(board, player))
   }
 
-  private def isCheckmated(board: Board, player: Player): Boolean = {
-    def hasEscape(player: Player): Boolean = {
-      existsPlayerPieces(board, player) { (position, piece) =>
-        piece.getAllPossibleMoves(board, position).exists { to =>
-          val tempBoard = board.copy(
-            pieces = board.pieces - position + (to -> piece),
-            lastMove = Some(Move(player, position, to, piece))
-          )
+  private def hasEscape(board: Board, player: Player): Boolean = {
+    existsPlayerPieces(board, player) { (position, piece) =>
+      piece.getAllPossibleMoves(board, position).exists { to =>
+        val tempBoard = board.copy(
+          pieces = board.pieces - position + (to -> piece),
+          lastMove = Some(Move(player, position, to, piece))
+        )
 
-          // The invalidity of the `isCheck` method can be disregarded here, as it will only be invalid if there is no king.
-          // If there is no king, this function will not be invoked in the first place.
-          val k = !isChecked(tempBoard, player)
-          !isChecked(tempBoard, player)
-        }
+        // The invalidity of the `isCheck` method can be disregarded here, as it will only be invalid if there is no king.
+        // If there is no king, this function will not be invoked in the first place.
+        val k = !isChecked(tempBoard, player)
+        !isChecked(tempBoard, player)
       }
     }
+  }
 
-    isChecked(board, player) && !hasEscape(player)
+  private def isCheckmated(board: Board, player: Player): Boolean = {
+
+    isChecked(board, player) && !hasEscape(board, player)
   }
 
   def existsPlayerPieces(board: Board, player: Player)(f: (Position, Piece) => Boolean): Boolean = {

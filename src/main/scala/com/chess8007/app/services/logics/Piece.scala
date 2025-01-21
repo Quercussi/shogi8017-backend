@@ -2,28 +2,20 @@ package com.chess8007.app.services.logics
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import com.chess8007.app.errors.{GameStateError, IllegalMove, MoveValidationError, NoPromotion, OutOfBoard}
+import com.chess8007.app.errors.*
 import com.chess8007.app.services.*
+import com.chess8007.app.services.logics.Board.*
 import com.chess8007.app.services.logics.BoardAction.{ADD, REMOVE}
 
-import javax.print.attribute.standard.Destination
 import scala.annotation.tailrec
 
 enum PieceType:
   case KING, QUEEN, ROOK, BISHOP, KNIGHT, PAWN
 
-sealed trait Piece() {
+sealed trait Piece {
   val owner: Player
   val hasMoved: Boolean
 
-  def validateMove(board: Board, move: PlayerAction): Validated[MoveValidationError, BoardTransition] = {
-    if(!isSelfPin(board, move)) {
-      Invalid(IllegalMove)
-    }
-    
-    getBoardTransition(board, move)
-  }
-  
   def pieceType: PieceType
 
   def withMoved: Piece
@@ -41,7 +33,7 @@ sealed trait Piece() {
       pieces = board.pieces - from + (to -> board.pieces(from))
     )
 
-    tempBoard.isChecked(this.owner)
+    isChecked(tempBoard, this.owner)
   }
 
   protected def getMoveDeltas(move: PlayerAction): (Position, Position, Int, Int) = {
@@ -50,8 +42,8 @@ sealed trait Piece() {
     val dy = Math.abs(to.y - from.y)
     (from, to, dx, dy)
   }
-  
-  protected def isPathClear(board: Board, move: PlayerAction): Boolean = {
+
+  protected def isPathClear(board: Board, move: PlayerAction, canCaptureDestination: Boolean = true): Boolean = {
     val (from, to) = move.getFromToPositions
     val dx = to.x - from.x
     val dy = to.y - from.y
@@ -62,7 +54,7 @@ sealed trait Piece() {
     val yDir = if (dy == 0) 0 else dy / Math.abs(dy)
 
     // Check for intermediate positions excluding the destination
-    val isPathClear = (1 until (steps - 1)).forall { step =>
+    val isPathClear = (1 until steps).forall { step =>
       val intermediatePosition = Position(from.x + step * xDir, from.y + step * yDir)
       !board.pieces.contains(intermediatePosition)
     }
@@ -70,16 +62,21 @@ sealed trait Piece() {
     // For the destination position, ensure it's either empty or an opponent's piece
     val destinationPiece = board.pieces.get(to)
     val isDestinationOccupiedBySelf = destinationPiece.exists(_.owner == this.owner)
-    isPathClear && !isDestinationOccupiedBySelf
+    val isDestinationValid = if canCaptureDestination then
+      !destinationPiece.exists(_.owner == this.owner)
+    else
+      destinationPiece.isEmpty
+
+    isPathClear && isDestinationValid
   }
 
   protected def canOccupyDirectionList(board: Board, position: Position, directions: List[(Int, Int)]): Boolean = {
     directions.exists { direction =>
-      canOccupy(board, position, direction)
+      !position.isOutOfBoard && canOccupy(board, position, direction)
     }
   }
 
-  private def canOccupy(board: Board, position: Position, direction: (Int, Int)): Boolean = {
+  protected def canOccupy(board: Board, position: Position, direction: (Int, Int)): Boolean = {
     val (dx, dy) = direction
     val destination = position.move(dx, dy)
     !destination.isOutOfBoard && board.pieces.get(destination).forall(_.owner != this.owner)
@@ -114,12 +111,33 @@ sealed trait Piece() {
   }
 }
 
+object Piece {
+  def validateAndApplyMove(piece: Piece, board: Board, move: PlayerAction): Validated[MoveValidationError, BoardStateTransition] = {
+    if (!piece.isSelfPin(board, move)) {
+      Invalid(IllegalMove)
+    }
+
+    val boardTransitionValidated = piece.getBoardTransition(board, move)
+
+    boardTransitionValidated.andThen((stateTransition, algebraicNotation) => {
+      val newPieces = processAction(board.pieces)(stateTransition)
+      val newMove = getPlayerActionAsMove(piece.owner, piece, move)
+
+      val newBoard = Board(newPieces, Some(newMove))
+      if isChecked(newBoard, piece.owner) then
+        Invalid(IllegalMove)
+      else
+        Valid((newBoard, stateTransition, algebraicNotation))
+    })
+  }
+}
+
 sealed trait SimpleCapturingPiece extends Piece {
   protected def getActionList(board: Board, move: PlayerAction): BoardTransition = {
     val (from, to) = move.getFromToPositions
     val capturingPiece = board.pieces.get(to)
-    val capturingAction: Option[StateTransition] = capturingPiece.flatMap(p => {
-      Some((REMOVE, to, p.owner, p.pieceType))
+    val capturingAction: Option[StateTransition] = capturingPiece.map(p => {
+      (REMOVE, to, p.owner, p.pieceType)
     })
 
     val fromAction: Option[StateTransition] = Some((REMOVE, from, owner, pieceType))
@@ -190,6 +208,8 @@ sealed trait KinglyMovingPiece extends StarMovingPiece {
     Option(position).filter(predicate).toSet
 
   private def getAllCastlingMoves(board: Board, position: Position): Set[Position] = {
+    if (this.hasMoved) return Set.empty
+
     val castlingOffsets = List(2, -2)
     val castlingRow = this.owner match {
       case Player.WHITE_PLAYER => 1
@@ -209,6 +229,13 @@ sealed trait KinglyMovingPiece extends StarMovingPiece {
     getAllCastlingMoves(board, position).nonEmpty
   }
 
+  override protected def canOccupyDirectionList(board: Board, position: Position, directions: List[(Int, Int)]): Boolean = {
+    directions.exists { direction => {
+      val dest = position.move(direction._1, direction._2)
+      !dest.isOutOfBoard && canOccupy(board, position, direction) && !dest.isUnderAttack(board, owner)
+    }}
+  }
+
   private def hasKinglyMove(board: Board, position: Position): Boolean = {
     canOccupyDirectionList(board, position, directions) || hasCastlingMove(board, position)
   }
@@ -222,15 +249,19 @@ sealed trait KinglyMovingPiece extends StarMovingPiece {
   }
 
   protected def getCastlingStateTransition(board: Board, move: PlayerAction): BoardTransition = {
+    if(this.hasMoved) return (List.empty, "")
+
     val (from, to) = move.getFromToPositions
     val (dx, dy) = (to.x - from.x, to.y - from.y)
-    
-    if (Math.abs(dx) != 2 || dy != 0 || from.isUnderAttack(board, owner)) return (List.empty, "")
 
-    def canCastle(rookOffset: Int, pathOffsets: List[Int]): Boolean = {
-      val rookPosition = from.move(rookOffset, 0)
 
-      val pathPositions = pathOffsets.map(from.move(_, 0))
+    if (Math.abs(dx) != 2 || dy != 0) return (List.empty, "")
+    if (from.isUnderAttack(board, owner)) return (List.empty, "")
+
+    def canCastle(rookFromOffset: Int, kingPath: List[Int]): Boolean = {
+      val rookPosition = from.move(rookFromOffset, 0)
+
+      val pathPositions = kingPath.map(from.move(_, 0))
       val isPathClear = pathPositions.forall(pos =>
         !board.pieces.contains(pos) && !pos.isUnderAttack(board, owner)
       )
@@ -241,19 +272,19 @@ sealed trait KinglyMovingPiece extends StarMovingPiece {
       }
     }
 
-    def createStateChange(rookOffset: Int, rookTargetOffset: Int): StateTransitionList = {
+    def createStateChange(rookFromOffset: Int, rookToOffset: Int): StateTransitionList = {
       List(
         (REMOVE, from, owner, PieceType.KING),
         (ADD, to, owner, PieceType.KING),
-        (REMOVE, from.move(rookOffset, 0), owner, PieceType.ROOK),
-        (ADD, from.move(rookTargetOffset, 0), owner, PieceType.ROOK)
+        (REMOVE, from.move(rookFromOffset, 0), owner, PieceType.ROOK),
+        (ADD, to.move(rookToOffset, 0), owner, PieceType.ROOK)
       )
     }
 
     if (dx > 0 && canCastle(3, List(1, 2))) // King-side castling
-      (createStateChange(3, 1), "O-O")
-    else if (dx < 0 && canCastle(-4, List(-1, -2, -3))) // Queen-side castling
-      (createStateChange(-4, -1), "O-O-O")
+      (createStateChange(3, -1), "O-O")
+    else if (dx < 0 && canCastle(-4, List(-1, -2))) // Queen-side castling
+      (createStateChange(-4, 1), "O-O-O")
     else
       (List.empty, "")
   }
@@ -272,7 +303,54 @@ sealed trait KnightMovingPiece extends Piece with SimpleCapturingPiece {
 
   def getAllPossibleMoves(board: Board, position: Position): Set[Position] = {
     getAllUnitMovesInDirection(board, position, directions)
+  }
+}
 
+sealed trait PawnlyMovingPiece extends Piece with SimpleCapturingPiece {
+  protected val direction: Int
+
+  protected def getForwardMove(board: Board, position: Position): Set[Position] = {
+    val forward = position.move(0, direction)
+    if (board.pieces.contains(forward)) Set.empty
+    else Set(forward)
+  }
+
+  protected def getDoubleMove(board: Board, position: Position): Set[Position] = {
+    val forward = position.move(0, direction)
+    val doubleForward = position.move(0, 2 * direction)
+    if (board.pieces.contains(forward) || board.pieces.contains(doubleForward)) Set.empty
+    else Set(doubleForward)
+  }
+
+  protected def getCaptureMoves(board: Board, position: Position): Set[Position] = {
+    val left = position.move(-1, direction)
+    val right = position.move(1, direction)
+    val leftCapture = board.pieces.get(left).filter(_.owner != owner).map(_ => left)
+    val rightCapture = board.pieces.get(right).filter(_.owner != owner).map(_ => right)
+    Set(leftCapture, rightCapture).flatten
+  }
+
+  protected def getEnPassantCapture(board: Board, position: Position): Set[Position] = {
+    val left = position.move(-1, direction)
+    val right = position.move(1, direction)
+    val leftCapture = board.pieces.get(left).filter(_.owner != owner).map(_ => left)
+    val rightCapture = board.pieces.get(right).filter(_.owner != owner).map(_ => right)
+    Set(leftCapture, rightCapture).flatten
+  }
+
+  def hasLegalMoves(board: Board, from: Position): Boolean = {
+    val direction = if (owner == Player.WHITE_PLAYER) 1 else -1
+    List((0, direction), (0, 2 * direction), (1, direction), (-1, direction)).exists { case (dx, dy) =>
+      getBoardTransition(board, PlayerAction(from, from.move(dx, dy))).exists(_._1.nonEmpty)
+    }
+  }
+
+  def getAllPossibleMoves(board: Board, position: Position): Set[Position] = {
+    val forwardMove = getForwardMove(board, position)
+    val doubleMove = getDoubleMove(board, position)
+    val captureMoves = getCaptureMoves(board, position)
+    val enPassantCapture = getEnPassantCapture(board, position)
+    forwardMove union doubleMove union captureMoves union enPassantCapture
   }
 }
 
@@ -285,11 +363,13 @@ case class King(owner: Player, hasMoved: Boolean = false) extends Piece with Kin
   def getBoardTransition(board: Board, move: PlayerAction): Validated[MoveValidationError, BoardTransition] = {
     val (from, to, absDx, absDy) = getMoveDeltas(move)
 
-    val isRegularDirection = (absDx <= 1 && absDy <= 1) && (absDx != 0 || absDy != 0) && isPathClear(board, move)
+    val isRegularDirection = (absDx <= 1 && absDy <= 1) && (absDx != 0 || absDy != 0) && isPathClear(board, move, true)
     val castlingChanges = this.getCastlingStateTransition(board, move)
 
-    if (isRegularDirection)
+    if (isRegularDirection) {
+      val tempBoard = board.copy(pieces = board.pieces - from + (to -> board.pieces(from)))
       Valid(getActionList(board, move))
+    }
     else if (castlingChanges._1.nonEmpty)
       Valid(castlingChanges)
     else
@@ -305,7 +385,7 @@ case class Queen(owner: Player, hasMoved: Boolean = false) extends PromotablePie
 
   def getBoardTransition(board: Board, move: PlayerAction): Validated[MoveValidationError, BoardTransition] = {
     val (from, to, absDx, absDy) = getMoveDeltas(move)
-    val isValidDestination = (absDx == absDy || from.x == to.x || from.y == to.y) && isPathClear(board, move)
+    val isValidDestination = (absDx == absDy || from.x == to.x || from.y == to.y) && isPathClear(board, move, true)
 
     if (isValidDestination)
       Valid(getActionList(board, move))
@@ -322,7 +402,7 @@ case class Rook(owner: Player, hasMoved: Boolean = false) extends PromotablePiec
 
   def getBoardTransition(board: Board, move: PlayerAction): Validated[MoveValidationError, BoardTransition] = {
     val (from, to) = move.getFromToPositions
-    val isValidDestination = (from.x == to.x || from.y == to.y) && isPathClear(board, move)
+    val isValidDestination = (from.x == to.x || from.y == to.y) && isPathClear(board, move, true)
 
     if (isValidDestination)
       Valid(getActionList(board, move))
@@ -340,7 +420,7 @@ case class Bishop(owner: Player, hasMoved: Boolean = false) extends PromotablePi
   def getBoardTransition(board: Board, move: PlayerAction): Validated[MoveValidationError, BoardTransition] = {
     val (from, to, absDx, absDy) = getMoveDeltas(move)
     
-    val isValidDestination = absDx == absDy && isPathClear(board, move)
+    val isValidDestination = absDx == absDy && isPathClear(board, move, true)
 
     if (isValidDestination)
       Valid(getActionList(board, move))
@@ -357,7 +437,7 @@ case class Knight(owner: Player, hasMoved: Boolean = false) extends PromotablePi
 
   def getBoardTransition(board: Board, move: PlayerAction): Validated[MoveValidationError, BoardTransition] = {
     val (from, to, absDx, absDy) = getMoveDeltas(move)
-    val isValidDestination = absDx == 2 && absDy == 1 || absDx == 1 && absDy == 2
+    val isValidDestination = (absDx == 2 && absDy == 1 || absDx == 1 && absDy == 2) && board.pieces.get(to).forall(_.owner != owner)
 
     if (isValidDestination)
       Valid(getActionList(board, move))
@@ -366,7 +446,8 @@ case class Knight(owner: Player, hasMoved: Boolean = false) extends PromotablePi
   }
 }
 
-case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece {
+case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece with PawnlyMovingPiece {
+  val direction: Int = if (owner == Player.WHITE_PLAYER) 1 else -1
 
   def pieceType: PieceType = PieceType.PAWN
 
@@ -390,20 +471,23 @@ case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece {
     val isDoubleDirection = dx == 0 && dy == 2 * direction
     val isCapturingDirection = Math.abs(dx) == 1 && dy == direction
 
-    def isStepMove: Boolean =           isRegularDirection   && isPathClear(board, move)
-    def isDoubleMove: Boolean =         isDoubleDirection    && isPathClear(board, move) && !this.hasMoved
-    def isRegularCaptureMove: Boolean = isCapturingDirection && !isDestinationOccupiedByOpponent
+    def isStepMove: Boolean =           isRegularDirection   && isPathClear(board, move, false)
+    def isDoubleMove: Boolean =         isDoubleDirection    && isPathClear(board, move, false)
+    def isRegularCaptureMove: Boolean = isCapturingDirection && isDestinationOccupiedByOpponent
     def enPassantStateTransition: BoardTransition = getEnPassantStateTransition(board, move)
 
     val lastRow = if (isOwnerWhite) 8 else 1
     val effectingPieceAction: Validated[MoveValidationError, StateTransitionList] = (promoteTo, to) match {
-      case (None, Position(_, lastRow)) => Invalid(NoPromotion)
-      case (Some(promotablePiece), Position(_, lastRow)) =>
+      case (None, Position(_, row)) if row == lastRow =>
+        Invalid(NoPromotion)
+      case (Some(promotablePiece), Position(_, row)) if (promotablePiece.owner != this.owner) =>
+        Invalid(IllegalPromotion)
+      case (Some(promotablePiece), Position(_, row)) if row == lastRow =>
         Valid(List(
           (REMOVE, from, owner, PieceType.PAWN),
           (ADD, to, owner, promotablePiece.pieceType)
         ))
-      case (_, pos) =>
+      case _ =>
         Valid(List(
           (REMOVE, from, owner, PieceType.PAWN),
           (ADD, to, owner, PieceType.PAWN)
@@ -411,11 +495,16 @@ case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece {
     }
       
     effectingPieceAction.andThen(actionList =>
-      if (isStepMove || isDoubleMove) {
+      if (isStepMove) {
         Valid((actionList, ""))
+      } else if (isDoubleMove) {
+        if (this.hasMoved)
+          Invalid(IllegalMove)
+        else
+          Valid((actionList, ""))
       } else if (isRegularCaptureMove) {
         destinationPiece match {
-          case Some(capturingPiece) => Valid((actionList ++ List((REMOVE, to, opponent, capturingPiece.pieceType)), ""))
+          case Some(capturingPiece) => Valid(((REMOVE, to, opponent, capturingPiece.pieceType)::actionList, ""))
           case None => Invalid(IllegalMove)
         }
       } else if (enPassantStateTransition._1.nonEmpty) {
@@ -424,13 +513,6 @@ case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece {
         Invalid(IllegalMove)
       }
     )
-  }
-
-  def hasLegalMoves(board: Board, from: Position): Boolean = {
-    val direction = if (owner == Player.WHITE_PLAYER) 1 else -1
-    List((0, direction), (0, 2 * direction), (1, direction), (-1, direction)).exists { case (dx, dy) =>
-      getBoardTransition(board, PlayerAction(from, from.move(dx, dy))).exists(_._1.nonEmpty)
-    }
   }
 
   private def getEnPassantStateTransition(board: Board, move: PlayerAction): BoardTransition = {
@@ -448,15 +530,15 @@ case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece {
         val isCorrectColumnTo = to.x == lastTo.x
         val isOpponentPawn = lastPiece.owner != owner
 
-        (
-          List(
+        if(isCorrectRowFrom && isCorrectRowTo && isCorrectColumnFrom && isCorrectColumnTo && isOpponentPawn) {
+          (List(
             (REMOVE, lastTo, lastPlayer, PieceType.PAWN),
             (REMOVE, from, owner, PieceType.PAWN),
-            (ADD, to, owner, PieceType.PAWN),
-          ),
-          // TODO: implement algebraic notation
-          ""
-        )
+            (ADD, to, owner, PieceType.PAWN))
+          , "")
+        } else {
+          (List.empty, "")
+        }
 
       case _ => (List.empty, "")
     }
