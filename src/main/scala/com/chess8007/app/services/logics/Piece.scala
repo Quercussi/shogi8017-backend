@@ -330,6 +330,7 @@ sealed trait PawnlyMovingPiece extends Piece with SimpleCapturingPiece {
     Set(leftCapture, rightCapture).flatten
   }
 
+  // TODO: this is still incorrect
   protected def getEnPassantCapture(board: Board, position: Position): Set[Position] = {
     val left = position.move(-1, direction)
     val right = position.move(1, direction)
@@ -480,7 +481,7 @@ case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece with Paw
     val effectingPieceAction: Validated[MoveValidationError, StateTransitionList] = (promoteTo, to) match {
       case (None, Position(_, row)) if row == lastRow =>
         Invalid(NoPromotion)
-      case (Some(promotablePiece), Position(_, row)) if (promotablePiece.owner != this.owner) =>
+      case (Some(promotablePiece), Position(_, row)) if promotablePiece.owner != this.owner =>
         Invalid(IllegalPromotion)
       case (Some(promotablePiece), Position(_, row)) if row == lastRow =>
         Valid(List(
