@@ -1,11 +1,8 @@
 package com.chess8007.app.routes
 
 import cats.effect.IO
-import com.chess8007.app.AppConfig
-import com.chess8007.app.database.DatabaseResource
-import com.chess8007.app.services.{AuthenticationService, UserService}
+import com.chess8007.app.services.UserService
 import io.circe.generic.auto.*
-import io.circe.syntax.*
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.dsl.io.*

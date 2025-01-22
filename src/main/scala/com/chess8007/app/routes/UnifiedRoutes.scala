@@ -5,12 +5,15 @@ import cats.implicits.toSemigroupKOps
 import com.chess8007.app.{AppConfig, JwtConfig}
 import com.chess8007.app.database.DatabaseResource
 import com.chess8007.app.database.Database
+import com.chess8007.app.middlewares.*
 import com.chess8007.app.repository.{RepositoryCollection, UserRepository}
 import com.chess8007.app.services.{AuthenticationService, ServiceCollection, UserService}
 import org.http4s.HttpRoutes
 
-class UnifiedRoutes(authenticationRoutes: AuthenticationRoutes, unauthenticatedRoutes: UnauthenticatedRoutes) {
-  def getRoutes: HttpRoutes[IO] = authenticationRoutes.getLoginRoute <+> unauthenticatedRoutes.getSignUpRoute
+class UnifiedRoutes(mc: MiddlewareCollection, authenticationRoutes: AuthenticationRoutes, unauthenticatedRoutes: UnauthenticatedRoutes) {
+  def getRoutes: HttpRoutes[IO] = authenticationRoutes.getLoginRoute 
+    <+> mc.refreshTokenMiddleware(authenticationRoutes.getRefreshTokenRoute)
+    <+> unauthenticatedRoutes.getSignUpRoute 
 }
 
 object UnifiedRoutes {
@@ -32,16 +35,26 @@ object UnifiedRoutes {
     )
   }
 
-  private def instantiateRoutes(serviceCollection: ServiceCollection): UnifiedRoutes = {
+  private def instantiateMiddlewares(jwtConfig: JwtConfig): MiddlewareCollection = {
+    val accessTokenMiddleware = AccessTokenMiddleware.of(jwtConfig)
+    val refreshTokenMiddleware = RefreshTokenMiddleware.of(jwtConfig)
+    MiddlewareCollection(
+      accessTokenMiddleware = accessTokenMiddleware,
+      refreshTokenMiddleware = refreshTokenMiddleware
+    )
+  }
+  
+  private def instantiateRoutes(middlewareCollection: MiddlewareCollection, serviceCollection: ServiceCollection): UnifiedRoutes = {
     val authenticationRoutes = AuthenticationRoutes.of(serviceCollection.authenticationService)
     val unauthenticatedRoutes = UnauthenticatedRoutes.of(serviceCollection.userService)
-    new UnifiedRoutes(authenticationRoutes, unauthenticatedRoutes)
+    new UnifiedRoutes(middlewareCollection, authenticationRoutes, unauthenticatedRoutes)
   }
-
+  
   def of(appConfig: AppConfig): UnifiedRoutes = {
     val db = instantiateDb(appConfig)
     val repositoryCollection = instantiateRepository(db)
     val serviceCollection = instantiateServices(appConfig, repositoryCollection)
-    instantiateRoutes(serviceCollection)
+    val middlewareCollection = instantiateMiddlewares(appConfig.jwt)
+    instantiateRoutes(middlewareCollection, serviceCollection)
   }
 }
