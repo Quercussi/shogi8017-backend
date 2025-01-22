@@ -9,7 +9,7 @@ import com.chess8007.app.repository.{RepositoryCollection, UserRepository}
 import com.chess8007.app.services.{AuthenticationService, ServiceCollection, UserService}
 import org.http4s.HttpRoutes
 
-class UnifiedRoutes(authenticationRoutes: AuthenticationRoutesV2, unauthenticatedRoutes: UnauthenticatedRoutes) {
+class UnifiedRoutes(authenticationRoutes: AuthenticationRoutes, unauthenticatedRoutes: UnauthenticatedRoutes) {
   def getRoutes: HttpRoutes[IO] = authenticationRoutes.getLoginRoute <+> unauthenticatedRoutes.getSignUpRoute
 }
 
@@ -33,7 +33,7 @@ object UnifiedRoutes {
   }
 
   private def instantiateRoutes(serviceCollection: ServiceCollection): UnifiedRoutes = {
-    val authenticationRoutes = AuthenticationRoutesV2.of(serviceCollection.authenticationService)
+    val authenticationRoutes = AuthenticationRoutes.of(serviceCollection.authenticationService)
     val unauthenticatedRoutes = UnauthenticatedRoutes.of(serviceCollection.userService)
     new UnifiedRoutes(authenticationRoutes, unauthenticatedRoutes)
   }

@@ -12,7 +12,7 @@ import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.dsl.io.*
 import org.http4s.{HttpRoutes, Response, ResponseCookie}
 
-case class AuthenticationRoutesV2(authenticationService: AuthenticationService) {
+case class AuthenticationRoutes(authenticationService: AuthenticationService) {
 
   def getLoginRoute: HttpRoutes[IO] = HttpRoutes.of {
     case req @ POST -> Root / "api" / "login" =>
@@ -37,6 +37,6 @@ case class AuthenticationRoutesV2(authenticationService: AuthenticationService) 
 //  }
 }
 
-object AuthenticationRoutesV2 {
-  def of(authenticationService: AuthenticationService) = new AuthenticationRoutesV2(authenticationService)
+object AuthenticationRoutes {
+  def of(authenticationService: AuthenticationService) = new AuthenticationRoutes(authenticationService)
 }
