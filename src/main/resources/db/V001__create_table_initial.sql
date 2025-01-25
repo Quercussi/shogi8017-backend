@@ -46,16 +46,3 @@ CREATE TABLE `boardHistories` (
     INDEX `idx_boardId` (`boardId`),
     INDEX `idx_moveNumber` (`moveNumber`)
 );
-
-CREATE TABLE `boardStateCaches` (
-    `boardStateCacheId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    `boardId` CHAR(36) NOT NULL,
-    `piece` ENUM('KING', 'QUEEN', 'ROOK', 'BISHOP', 'KNIGHT', 'PAWN') NOT NULL,
-    `playerTurn` ENUM('WHITE', 'BLACK') NOT NULL,
-    `posX` INT NOT NULL,
-    `posY` INT NOT NULL,
-    `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`boardId`) REFERENCES `boards`(`boardId`) ON DELETE CASCADE,
-    INDEX `idx_boardId` (`boardId`)
-);
