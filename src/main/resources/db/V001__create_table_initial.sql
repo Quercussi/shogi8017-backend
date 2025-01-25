@@ -21,6 +21,8 @@ CREATE TABLE `games` (
     `blackUserId` CHAR(36),
     `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `winner` ENUM('WHITE', 'BLACK', 'DRAW') NULL,
+    `gameState` ENUM('PENDING', 'ON_GOING', 'FINISHED') NOT NULL,
     FOREIGN KEY (`boardId`) REFERENCES `boards`(`boardId`) ON DELETE CASCADE,
     FOREIGN KEY (`whiteUserId`) REFERENCES `users`(`userId`) ON DELETE SET NULL,
     FOREIGN KEY (`blackUserId`) REFERENCES `users`(`userId`) ON DELETE SET NULL,
@@ -28,6 +30,14 @@ CREATE TABLE `games` (
     INDEX `idx_boardId` (`boardId`),
     INDEX `idx_whiteUserId` (`whiteUserId`),
     INDEX `idx_blackUserId` (`blackUserId`)
+);
+
+CREATE TABLE `invitations` (
+    `invitationId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    `gameId` CHAR(36) NOT NULL,
+    `hasWhiteAccepted` BOOLEAN NOT NULL DEFAULT FALSE,
+    `hasBlackAccepted` BOOLEAN NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (`gameId`) REFERENCES `games`(`gameId`) ON DELETE CASCADE
 );
 
 CREATE TABLE `boardHistories` (
