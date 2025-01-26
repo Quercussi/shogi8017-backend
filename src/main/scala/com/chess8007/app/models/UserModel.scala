@@ -7,5 +7,3 @@ object UserModel {
     UserModel(userModelWithPassword.userId, userModelWithPassword.username)
   }
 }
-
-case class UserModelWithPassword(userId: String, username: String, password: String)
