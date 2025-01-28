@@ -10,7 +10,7 @@ class Database(appConfig: AppConfig) {
   lazy val db: DatabaseResource = for {
     ce <- ExecutionContexts.fixedThreadPool[IO](32)
     xa <- HikariTransactor.newHikariTransactor[IO](
-      "com.mysql.jdbc.Driver",
+      "com.mysql.cj.jdbc.Driver",
       appConfig.database.connectionUrl,
       appConfig.database.user,
       appConfig.database.password,
@@ -23,4 +23,7 @@ class Database(appConfig: AppConfig) {
 
 object Database {
   def of(appConfig: AppConfig): Database = new Database(appConfig)
+
+  def instantiateDb(appConfig: AppConfig): DatabaseResource =
+    of(appConfig).database
 }
