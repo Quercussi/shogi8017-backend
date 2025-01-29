@@ -6,9 +6,10 @@ import cats.syntax.all.*
 import com.chess8007.app.errors.*
 import GameEvent.{CHECK, CHECKMATE, DEAD_POSITION, STALEMATE}
 import com.chess8007.app.services.*
+import com.chess8007.app.services.logics.NonPromotablePieceType.*
 import com.chess8007.app.services.logics.Piece.validateAndApplyMove
-import com.chess8007.app.services.logics.PieceType.{BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK}
 import com.chess8007.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.chess8007.app.services.logics.PromotablePieceType.*
 
 type MoveResult = (Board, StateTransitionList, AlgebraicNotation, Option[GameEvent])
 type BoardStateTransition = (Board, StateTransitionList, AlgebraicNotation)

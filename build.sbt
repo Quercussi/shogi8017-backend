@@ -15,8 +15,11 @@ val redis4catsVersion = "1.7.2"
 val pureconfigVersion = "0.17.8"
 
 libraryDependencies ++= Seq(
-  "org.typelevel" %% "cats-core" % "2.12.0",
+  "org.typelevel" %% "cats-core" % "2.13.0",
   "org.typelevel" %% "cats-effect" % "3.5.7",
+
+  "org.scalatest" %% "scalatest" % "3.2.19" % Test,
+  "org.typelevel" %% "cats-effect-testing-scalatest" % "1.6.0" % Test,
 
   "org.http4s" %% "http4s-dsl"          % http4sVersion,
   "org.http4s" %% "http4s-server"       % http4sVersion,
@@ -39,6 +42,8 @@ libraryDependencies ++= Seq(
 
   "dev.profunktor" %% "redis4cats-effects" % redis4catsVersion,
   "dev.profunktor" %% "redis4cats-streams" % redis4catsVersion,
+
+  "dev.profunktor" %% "fs2-rabbit-circe" % "5.3.0",
 
   "ch.qos.logback" % "logback-classic" % "1.5.16",
 
