@@ -2,59 +2,79 @@ package com.chess8007.app.routes
 
 import cats.effect.IO
 import cats.implicits.toSemigroupKOps
-import com.chess8007.app.{AppConfig, JwtConfig}
-import com.chess8007.app.database.DatabaseResource
-import com.chess8007.app.database.Database
 import com.chess8007.app.middlewares.*
-import com.chess8007.app.repository.{RepositoryCollection, UserRepository}
-import com.chess8007.app.services.{AuthenticationService, ServiceCollection, UserService}
+import com.chess8007.app.repository.*
+import com.chess8007.app.services.*
 import org.http4s.HttpRoutes
+import org.http4s.server.Router
+import org.http4s.server.websocket.WebSocketBuilder2
 
-class UnifiedRoutes(mc: MiddlewareCollection, authenticationRoutes: AuthenticationRoutes, unauthenticatedRoutes: UnauthenticatedRoutes) {
-  def getRoutes: HttpRoutes[IO] = authenticationRoutes.getLoginRoute 
-    <+> mc.refreshTokenMiddleware(authenticationRoutes.getRefreshTokenRoute)
-    <+> unauthenticatedRoutes.getSignUpRoute 
+class UnifiedRoutes(
+  wbs: WebSocketBuilder2[IO],
+  mc: MiddlewareCollection,
+  authenticationRoutes: AuthenticationRoutes,
+  unauthenticatedRoutes: UnauthenticatedRoutes,
+  invitationRoutes: InvitationRoutes
+) {
+  private val publicRoutes = Router(
+    "/api" -> (authenticationRoutes.getLoginRoute <+> unauthenticatedRoutes.getSignUpRoute)
+  )
+
+  private def wsRoutes(wbs: WebSocketBuilder2[IO]) = Router(
+    "/ws" -> mc.accessTokenMiddleware(invitationRoutes.routes(wbs))
+  )
+
+  private val refreshRoutes = Router(
+    "/api" -> mc.refreshTokenMiddleware(authenticationRoutes.getRefreshTokenRoute)
+  )
+
+  def getRoutes: HttpRoutes[IO] =
+    publicRoutes <+> wsRoutes(wbs) <+> refreshRoutes
 }
 
 object UnifiedRoutes {
-  private def instantiateDb(appConfig: AppConfig): DatabaseResource = Database.of(appConfig).database
 
-  private def instantiateRepository(db: DatabaseResource): RepositoryCollection = {
-    val userRepo: UserRepository = UserRepository.of(db)
-    RepositoryCollection(
-      userRepository = userRepo
-    )
-  }
-
-  private def instantiateServices(appConfig: AppConfig, repositoryCollection: RepositoryCollection): ServiceCollection = {
-    val userService = UserService.of(repositoryCollection.userRepository)
-    val authenticationService = AuthenticationService.of(appConfig.jwt, repositoryCollection.userRepository)
-    ServiceCollection(
-      userService = userService,
-      authenticationService = authenticationService
-    )
-  }
-
-  private def instantiateMiddlewares(jwtConfig: JwtConfig): MiddlewareCollection = {
-    val accessTokenMiddleware = AccessTokenMiddleware.of(jwtConfig)
-    val refreshTokenMiddleware = RefreshTokenMiddleware.of(jwtConfig)
-    MiddlewareCollection(
-      accessTokenMiddleware = accessTokenMiddleware,
-      refreshTokenMiddleware = refreshTokenMiddleware
-    )
-  }
-  
-  private def instantiateRoutes(middlewareCollection: MiddlewareCollection, serviceCollection: ServiceCollection): UnifiedRoutes = {
+  def instantiateRoutes(
+     wbs: WebSocketBuilder2[IO],
+     wsBuffer: WebSocketRouteBuffer,
+     middlewareCollection: MiddlewareCollection,
+     serviceCollection: ServiceCollection,
+  ): UnifiedRoutes = {
     val authenticationRoutes = AuthenticationRoutes.of(serviceCollection.authenticationService)
     val unauthenticatedRoutes = UnauthenticatedRoutes.of(serviceCollection.userService)
     new UnifiedRoutes(middlewareCollection, authenticationRoutes, unauthenticatedRoutes)
+    val invitationRoutes = InvitationRoutes.of(wsBuffer.invitationRouteBuffer)
+    new UnifiedRoutes(
+      wbs,
+      middlewareCollection,
+      authenticationRoutes,
+      unauthenticatedRoutes,
+    )
   }
-  
-  def of(appConfig: AppConfig): UnifiedRoutes = {
-    val db = instantiateDb(appConfig)
-    val repositoryCollection = instantiateRepository(db)
-    val serviceCollection = instantiateServices(appConfig, repositoryCollection)
-    val middlewareCollection = instantiateMiddlewares(appConfig.jwt)
-    instantiateRoutes(middlewareCollection, serviceCollection)
+
+  def initializeWebSocketProcessingStream(
+    wsBuffer: WebSocketRouteBuffer,
+    repositoryCollection: RepositoryCollection
+  ): IO[Unit] = {
+    val invitationRouteBuffer = wsBuffer.invitationRouteBuffer
+    val invitationService = new InvitationService(repositoryCollection.gameRepository)
+    invitationService
+      .initiateProcessingStream(invitationRouteBuffer.processQueue, invitationRouteBuffer.clientRegistry)
+      .compile
+      .drain
+      .handleErrorWith(err => IO(println(s"Error in processing stream: ${err.getMessage}")))
+      .start
+      .void
   }
+
+//  def of(appConfig: AppConfig, websocketBuffer: WebSocketRouteBuffer, wsb: WebSocketBuilder2[IO]): UnifiedRoutes = {
+//    val db = instantiateDb(appConfig)
+//    val repositoryCollection = instantiateRepository(db)
+//    val serviceCollection = instantiateServices(appConfig, repositoryCollection)
+//    val middlewareCollection = instantiateMiddlewares(appConfig.jwt)
+//
+//    initializeWebSocketProcessingStream(websocketBuffer, repositoryCollection)
+//
+//    instantiateRoutes(wsb, websocketBuffer, middlewareCollection, serviceCollection)
+//  }
 }

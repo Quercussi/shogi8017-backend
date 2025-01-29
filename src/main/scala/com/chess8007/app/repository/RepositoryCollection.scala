@@ -1,6 +1,5 @@
 package com.chess8007.app.repository
 
-case class RepositoryCollection(userRepository: UserRepository)
 import cats.effect.IO
 import doobie.util.transactor.Transactor
 

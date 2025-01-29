@@ -18,7 +18,7 @@ class UnauthenticatedRoutes(userService: UserService) {
   }
 
   def getSignUpRoute: HttpRoutes[IO] = HttpRoutes.of {
-    case req @ POST -> Root / "api" / "signUp" =>
+    case req @ POST -> Root / "signUp" =>
       for {
         userSignUpPayload <- req.as[UserSignUpPayload]
         user <- userService.signUpUser(userSignUpPayload)
