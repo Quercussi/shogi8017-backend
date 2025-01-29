@@ -42,13 +42,13 @@ object UnifiedRoutes {
   ): UnifiedRoutes = {
     val authenticationRoutes = AuthenticationRoutes.of(serviceCollection.authenticationService)
     val unauthenticatedRoutes = UnauthenticatedRoutes.of(serviceCollection.userService)
-    new UnifiedRoutes(middlewareCollection, authenticationRoutes, unauthenticatedRoutes)
     val invitationRoutes = InvitationRoutes.of(wsBuffer.invitationRouteBuffer)
     new UnifiedRoutes(
       wbs,
       middlewareCollection,
       authenticationRoutes,
       unauthenticatedRoutes,
+      invitationRoutes
     )
   }
 
@@ -67,14 +67,4 @@ object UnifiedRoutes {
       .void
   }
 
-//  def of(appConfig: AppConfig, websocketBuffer: WebSocketRouteBuffer, wsb: WebSocketBuilder2[IO]): UnifiedRoutes = {
-//    val db = instantiateDb(appConfig)
-//    val repositoryCollection = instantiateRepository(db)
-//    val serviceCollection = instantiateServices(appConfig, repositoryCollection)
-//    val middlewareCollection = instantiateMiddlewares(appConfig.jwt)
-//
-//    initializeWebSocketProcessingStream(websocketBuffer, repositoryCollection)
-//
-//    instantiateRoutes(wsb, websocketBuffer, middlewareCollection, serviceCollection)
-//  }
 }

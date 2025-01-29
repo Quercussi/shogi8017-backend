@@ -14,7 +14,7 @@ import org.http4s.{AuthedRoutes, HttpRoutes, Response, ResponseCookie}
 case class AuthenticationRoutes(authenticationService: AuthenticationService) {
 
   def getLoginRoute: HttpRoutes[IO] = HttpRoutes.of {
-    case req @ POST -> Root / "api" / "login" =>
+    case req @ POST -> Root / "login" =>
       for {
         userLoginPayload <- req.as[UserLoginPayload]
         response <- authenticationService.loginUser(userLoginPayload)
@@ -30,7 +30,7 @@ case class AuthenticationRoutes(authenticationService: AuthenticationService) {
   }
 
   def getRefreshTokenRoute: AuthedRoutes[UserModel, IO] = AuthedRoutes.of[UserModel, IO] {
-      case POST -> Root / "api" / "refreshToken" as user =>
+      case POST -> Root / "refreshToken" as user =>
       for {
         res <- Ok(TokenRefreshResponse.from(authenticationService.getUserToken(user)))
       } yield res

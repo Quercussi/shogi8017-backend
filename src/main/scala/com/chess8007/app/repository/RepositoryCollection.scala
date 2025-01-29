@@ -9,8 +9,10 @@ case class RepositoryCollection(userRepository: UserRepository, gameRepository: 
 object RepositoryCollection {
   def instantiateRepository(trx: Transactor[IO]): RepositoryCollection = {
     val userRepo: UserRepository = UserRepository.of(trx)
+    val gameRepo: GameRepository = GameRepository.of(trx)
     RepositoryCollection(
       userRepository = userRepo,
+      gameRepository = gameRepo,
     )
   }
 }
