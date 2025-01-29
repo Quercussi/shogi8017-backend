@@ -6,11 +6,18 @@ import com.shogi8017.app.errors.*
 import com.shogi8017.app.services.*
 import com.shogi8017.app.services.logics.Board.*
 import com.shogi8017.app.services.logics.BoardAction.{ADD, REMOVE}
+import com.shogi8017.app.services.logics.NonPromotablePieceType.*
+import com.shogi8017.app.services.logics.PromotablePieceType.*
 
 import scala.annotation.tailrec
 
-enum PieceType:
-  case KING, QUEEN, ROOK, BISHOP, KNIGHT, PAWN
+sealed trait PieceType
+
+enum PromotablePieceType extends PieceType:
+  case QUEEN, ROOK, BISHOP, KNIGHT
+
+enum NonPromotablePieceType extends PieceType:
+  case PAWN, KING
 
 sealed trait Piece {
   val owner: Player
@@ -274,10 +281,10 @@ sealed trait KinglyMovingPiece extends StarMovingPiece {
 
     def createStateChange(rookFromOffset: Int, rookToOffset: Int): StateTransitionList = {
       List(
-        (REMOVE, from, owner, PieceType.KING),
-        (ADD, to, owner, PieceType.KING),
-        (REMOVE, from.move(rookFromOffset, 0), owner, PieceType.ROOK),
-        (ADD, to.move(rookToOffset, 0), owner, PieceType.ROOK)
+        (REMOVE, from, owner, KING),
+        (ADD, to, owner, KING),
+        (REMOVE, from.move(rookFromOffset, 0), owner, ROOK),
+        (ADD, to.move(rookToOffset, 0), owner, ROOK)
       )
     }
 
@@ -330,6 +337,7 @@ sealed trait PawnlyMovingPiece extends Piece with SimpleCapturingPiece {
     Set(leftCapture, rightCapture).flatten
   }
 
+  // TODO: this is still incorrect
   protected def getEnPassantCapture(board: Board, position: Position): Set[Position] = {
     val left = position.move(-1, direction)
     val right = position.move(1, direction)
@@ -356,7 +364,7 @@ sealed trait PawnlyMovingPiece extends Piece with SimpleCapturingPiece {
 
 case class King(owner: Player, hasMoved: Boolean = false) extends Piece with KinglyMovingPiece with SimpleCapturingPiece {
 
-  def pieceType: PieceType = PieceType.KING
+  def pieceType: PieceType = KING
 
   def withMoved: King = copy(hasMoved = true)
 
@@ -379,7 +387,7 @@ case class King(owner: Player, hasMoved: Boolean = false) extends Piece with Kin
 
 case class Queen(owner: Player, hasMoved: Boolean = false) extends PromotablePiece with QueenlyMovingPiece {
 
-  def pieceType: PieceType = PieceType.QUEEN
+  def pieceType: PieceType = QUEEN
 
   def withMoved: Queen = copy(hasMoved = true)
 
@@ -396,7 +404,7 @@ case class Queen(owner: Player, hasMoved: Boolean = false) extends PromotablePie
 
 case class Rook(owner: Player, hasMoved: Boolean = false) extends PromotablePiece with CrossMovingPiece {
 
-  def pieceType: PieceType = PieceType.ROOK
+  def pieceType: PieceType = ROOK
 
   def withMoved: Rook = copy(hasMoved = true)
 
@@ -413,7 +421,7 @@ case class Rook(owner: Player, hasMoved: Boolean = false) extends PromotablePiec
 
 case class Bishop(owner: Player, hasMoved: Boolean = false) extends PromotablePiece with DiagonalMovingPiece {
 
-  def pieceType: PieceType = PieceType.BISHOP
+  def pieceType: PieceType = BISHOP
 
   def withMoved: Bishop = copy(hasMoved = true)
 
@@ -431,7 +439,7 @@ case class Bishop(owner: Player, hasMoved: Boolean = false) extends PromotablePi
 
 case class Knight(owner: Player, hasMoved: Boolean = false) extends PromotablePiece with KnightMovingPiece {
 
-  def pieceType: PieceType = PieceType.KNIGHT
+  def pieceType: PieceType = KNIGHT
 
   def withMoved: Knight = copy(hasMoved = true)
 
@@ -449,7 +457,7 @@ case class Knight(owner: Player, hasMoved: Boolean = false) extends PromotablePi
 case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece with PawnlyMovingPiece {
   val direction: Int = if (owner == Player.WHITE_PLAYER) 1 else -1
 
-  def pieceType: PieceType = PieceType.PAWN
+  def pieceType: PieceType = PAWN
 
   def withMoved: Pawn = copy(hasMoved = true)
 
@@ -480,17 +488,15 @@ case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece with Paw
     val effectingPieceAction: Validated[MoveValidationError, StateTransitionList] = (promoteTo, to) match {
       case (None, Position(_, row)) if row == lastRow =>
         Invalid(NoPromotion)
-      case (Some(promotablePiece), Position(_, row)) if (promotablePiece.owner != this.owner) =>
-        Invalid(IllegalPromotion)
-      case (Some(promotablePiece), Position(_, row)) if row == lastRow =>
+      case (Some(promotablePieceType), Position(_, row)) if row == lastRow =>
         Valid(List(
-          (REMOVE, from, owner, PieceType.PAWN),
-          (ADD, to, owner, promotablePiece.pieceType)
+          (REMOVE, from, owner, PAWN),
+          (ADD, to, owner, promotablePieceType)
         ))
       case _ =>
         Valid(List(
-          (REMOVE, from, owner, PieceType.PAWN),
-          (ADD, to, owner, PieceType.PAWN)
+          (REMOVE, from, owner, PAWN),
+          (ADD, to, owner, PAWN)
         ))
     }
       
@@ -532,9 +538,9 @@ case class Pawn(owner: Player, hasMoved: Boolean = false) extends Piece with Paw
 
         if(isCorrectRowFrom && isCorrectRowTo && isCorrectColumnFrom && isCorrectColumnTo && isOpponentPawn) {
           (List(
-            (REMOVE, lastTo, lastPlayer, PieceType.PAWN),
-            (REMOVE, from, owner, PieceType.PAWN),
-            (ADD, to, owner, PieceType.PAWN))
+            (REMOVE, lastTo, lastPlayer, PAWN),
+            (REMOVE, from, owner, PAWN),
+            (ADD, to, owner, PAWN))
           , "")
         } else {
           (List.empty, "")

@@ -6,9 +6,10 @@ import cats.syntax.all.*
 import com.shogi8017.app.errors.*
 import GameEvent.{CHECK, CHECKMATE, DEAD_POSITION, STALEMATE}
 import com.shogi8017.app.services.*
+import com.shogi8017.app.services.logics.NonPromotablePieceType.*
 import com.shogi8017.app.services.logics.Piece.validateAndApplyMove
-import com.shogi8017.app.services.logics.PieceType.{BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK}
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.PromotablePieceType.*
 
 type MoveResult = (Board, StateTransitionList, AlgebraicNotation, Option[GameEvent])
 type BoardStateTransition = (Board, StateTransitionList, AlgebraicNotation)
