@@ -1,7 +1,7 @@
-package com.chess8007.app.database
+package com.shogi8017.app.database
 
 import cats.effect.{IO, Resource}
-import com.chess8007.app.AppConfig
+import com.shogi8017.app.AppConfig
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 
