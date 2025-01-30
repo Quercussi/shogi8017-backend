@@ -1,4 +1,4 @@
-package com.chess8007.app.services.logics
+package com.shogi8017.app.services.logics
 
 enum PositionColor:
   case WHITE_POSITION, BLACK_POSITION

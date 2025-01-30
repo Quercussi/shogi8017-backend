@@ -1,6 +1,6 @@
-package com.chess8007.app.services.logics
+package com.shogi8017.app.services.logics
 
-import com.chess8007.app.services.logics.Board.*
+import com.shogi8017.app.services.logics.PositionColor
 
 case class Position(x: Int, y: Int) {
   /**
@@ -12,7 +12,7 @@ case class Position(x: Int, y: Int) {
    */
   def isUnderAttack(board: Board, player: Player): Boolean = {
     val opponent = if player == Player.WHITE_PLAYER then Player.BLACK_PLAYER else Player.WHITE_PLAYER
-    existsPlayerPieces(board,opponent) { (currentPosition, piece) =>
+    board.existsPlayerPieces(opponent) { (currentPosition, piece) =>
       piece.getBoardTransition(board, PlayerAction(currentPosition, this)).isValid
     }
   }

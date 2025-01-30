@@ -1,4 +1,4 @@
-package com.chess8007.app
+package com.shogi8017.app
 
 import cats.effect.IO
 import pureconfig.{ConfigReader, ConfigSource}

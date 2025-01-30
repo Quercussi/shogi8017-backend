@@ -1,4 +1,4 @@
-package com.chess8007.app.services.logics
+package com.shogi8017.app.services.logics
 
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder

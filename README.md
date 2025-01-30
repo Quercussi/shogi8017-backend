@@ -1,4 +1,4 @@
-# chess8007
+# shogi8017
 
 ### Requirements
 - A person can create and edit an account (a user).

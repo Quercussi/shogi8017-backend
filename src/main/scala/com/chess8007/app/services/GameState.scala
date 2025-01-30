@@ -1,7 +1,7 @@
-package com.chess8007.app.services
+package com.shogi8017.app.services
 
 import cats.data.State
-import com.chess8007.app.services.logics.{Board, Player, Position}
+import com.shogi8017.app.services.logics.{Board, Player, Position}
 
 case class GameState(board: Board, turnUser: User, playerMap: Map[Player, User])
 

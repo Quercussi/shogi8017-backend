@@ -54,8 +54,8 @@ libraryDependencies ++= Seq(
 
 lazy val root = (project in file("."))
   .settings(
-    name := "chess8007-backend",
-    fullRunTask(runMigrate, Compile, "com.chess8007.command.migration.DatabaseMigrationsCommand"),
+    name := "shogi8017-backend",
+    fullRunTask(runMigrate, Compile, "com.shogi8017.command.migration.DatabaseMigrationsCommand"),
     runMigrate / fork := true
 
   )
