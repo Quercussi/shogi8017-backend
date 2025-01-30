@@ -1,7 +1,7 @@
-package com.chess8007.command.migration
+package com.shogi8017.command.migration
 
 import cats.effect.*
-import com.chess8007.app.{AppConfig, DatabaseConfig}
+import com.shogi8017.app.{AppConfig, DatabaseConfig}
 import com.typesafe.scalalogging.LazyLogging
 import fly4s.*
 import fly4s.data.*

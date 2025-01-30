@@ -1,12 +1,12 @@
-package com.chess8007.command.migration
+package com.shogi8017.command.migration
 
 import cats.effect.{ExitCode, IO, IOApp}
-import com.chess8007.app.AppConfig
-import com.chess8007.command.migration.DatabaseMigrations.{createFly4sResource, handleMigration, loadAppConfig, logDatabaseConfig, logger}
+import com.shogi8017.app.AppConfig
+import com.shogi8017.command.migration.DatabaseMigrations.{createFly4sResource, handleMigration, loadAppConfig, logDatabaseConfig, logger}
 import com.typesafe.scalalogging.LazyLogging
 
 object DatabaseMigrationsCommand extends IOApp with LazyLogging {
-  private val defaultConfigNamespace = "chess8007"
+  private val defaultConfigNamespace = "shogi8017"
   
   def run(args: List[String]): IO[ExitCode] = {
     val configNamespace = args.headOption.getOrElse(defaultConfigNamespace)

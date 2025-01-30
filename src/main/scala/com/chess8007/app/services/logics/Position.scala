@@ -1,6 +1,6 @@
-package com.chess8007.app.services.logics
+package com.shogi8017.app.services.logics
 
-import com.chess8007.app.services.logics.PositionColor
+import com.shogi8017.app.services.logics.PositionColor
 
 case class Position(x: Int, y: Int) {
   /**

@@ -1,12 +1,12 @@
-package com.chess8007.app.services.logics
+package com.shogi8017.app.services.logics
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all.*
-import com.chess8007.app.errors.*
+import com.shogi8017.app.errors.*
 import GameEvent.{CHECK, CHECKMATE, DEAD_POSITION, STALEMATE}
-import com.chess8007.app.services.*
-import com.chess8007.app.services.logics.PieceType.{BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK}
+import com.shogi8017.app.services.*
+import com.shogi8017.app.services.logics.PieceType.{BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK}
 
 type MoveResult = (Board, StateTransitionList, AlgebraicNotation, Option[GameEvent])
 type BoardStateTransition = (Board, StateTransitionList, AlgebraicNotation)

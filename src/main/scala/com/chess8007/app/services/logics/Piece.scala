@@ -1,10 +1,10 @@
-package com.chess8007.app.services.logics
+package com.shogi8017.app.services.logics
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import com.chess8007.app.errors.{GameStateError, IllegalMove, MoveValidationError, NoPromotion, OutOfBoard}
-import com.chess8007.app.services.*
-import com.chess8007.app.services.logics.BoardAction.{ADD, REMOVE}
+import com.shogi8017.app.errors.{GameStateError, IllegalMove, MoveValidationError, NoPromotion, OutOfBoard}
+import com.shogi8017.app.services.*
+import com.shogi8017.app.services.logics.BoardAction.{ADD, REMOVE}
 
 import javax.print.attribute.standard.Destination
 import scala.annotation.tailrec

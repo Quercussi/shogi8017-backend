@@ -1,4 +1,4 @@
-package com.chess8007.app.services.logics
+package com.shogi8017.app.services.logics
 
 class PlayerAction(from: Position, to: Position, promoteTo: Option[PromotablePiece] = None) {
   def getFromToPositions: (Position, Position) = (from, to)

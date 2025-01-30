@@ -1,4 +1,4 @@
-package com.chess8007.app.errors
+package com.shogi8017.app.errors
 
 sealed trait GameValidationError
 
