@@ -2,6 +2,7 @@ package com.chess8007.app.middlewares
 
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
+import cats.syntax.applicative.*
 import com.chess8007.app.JwtConfig
 import com.chess8007.app.jwtClaimModels.UserClaimModel
 import com.chess8007.app.models.UserModel
@@ -22,18 +23,20 @@ object RefreshTokenMiddleware extends TokenMiddleware[UserClaimModel, UserModel]
   }
 
   private def decodeRefreshToken(jwtConfig: JwtConfig, token: String): IO[Either[String, UserModel]] = {
-    val jwtAuth = JwtAuth.hmac(jwtConfig.accessTokenSecret.toCharArray, jwtAlgorithm(jwtConfig.algorithm))
+    val jwtAuth = JwtAuth.hmac(jwtConfig.refreshTokenSecret.toCharArray, jwtAlgorithm(jwtConfig.algorithm))
     jwtDecode[IO](JwtToken(token), jwtAuth).flatMap { claim =>
       decode[UserClaimModel](claim.content) match {
         case Right(userClaim) => IO.pure(Right(classMapper(userClaim)))
         case Left(_)          => IO.pure(Left("Invalid refresh token payload"))
       }
-    }.handleError(_ => Left("Invalid refresh token"))
+    }.handleError(e => Left(s"Invalid refresh token: ${e.toString}"))
   }
 
   private def onFailure: AuthedRoutes[String, IO] = {
-    Kleisli { _ =>
-      OptionT.pure[IO](Response[IO](status = Status.Forbidden))
+    Kleisli { e =>
+      OptionT.liftF {
+        Response[IO](status = Status.Forbidden).withEntity(e.context).pure[IO]
+      }
     }
   }
 
