@@ -72,6 +72,14 @@ case class Multiset[T](elements: Map[T, Int]) {
 
 
   /**
+   * Checks whether the multiset contains at least one occurrence of the specified element.
+   *
+   * @param elem the element to check
+   * @return `true` if the element is present in the multiset, otherwise `false`
+   */
+  def contains(elem: T): Boolean = elements.contains(elem)
+  
+  /**
    * Returns the count of a specific element in the multiset.
    *
    * @param elem the element to count
