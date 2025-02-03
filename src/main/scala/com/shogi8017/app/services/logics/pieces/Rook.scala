@@ -7,7 +7,7 @@ case class Rook(owner: Player) extends Piece with RangedMovingPieceMethods with 
     PromotablePieceType.ROOK
   }
 
-  def rangedDirections: List[Direction] = Bishop.directions
+  def rangedDirections: List[Direction] = Rook.directions
 }
 
 object Rook {
