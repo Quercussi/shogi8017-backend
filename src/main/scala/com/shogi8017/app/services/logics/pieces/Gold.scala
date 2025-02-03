@@ -1,7 +1,5 @@
 package com.shogi8017.app.services.logics.pieces
 
-import cats.data.Validated
-import com.shogi8017.app.errors.ActionValidationError
 import com.shogi8017.app.services.logics.{Direction, Player}
 
 case class Gold(owner: Player) extends Piece with UnitMovingPieceMethods with DroppablePiece {

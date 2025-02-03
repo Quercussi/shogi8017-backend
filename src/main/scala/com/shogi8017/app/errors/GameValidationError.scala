@@ -2,14 +2,19 @@ package com.shogi8017.app.errors
 
 sealed trait GameValidationError extends Exception
 
-sealed trait MoveValidationError extends GameValidationError
-case object IllegalMove extends MoveValidationError
-case object UnoccupiedPosition extends MoveValidationError
-case object NoMove extends MoveValidationError
-case object NoPromotion extends MoveValidationError
-case object IllegalPromotion extends MoveValidationError
-case object OutOfTurn extends MoveValidationError
-case object OutOfBoard extends MoveValidationError
+sealed trait ActionValidationError extends GameValidationError
+case object IllegalMove extends ActionValidationError
+case object IllegalDrop extends ActionValidationError
+case object UnoccupiedPosition extends ActionValidationError
+case object NotOwnerOfPiece extends ActionValidationError
+case object NoMove extends ActionValidationError
+case object OutOfTurn extends ActionValidationError
+case object OutOfBoard extends ActionValidationError
+
+sealed trait IllegalPromotion extends ActionValidationError
+case object ExpectingPromotion extends IllegalPromotion
+case object CannotPromote extends IllegalPromotion
+case object IncorrectPromotionScenario extends IllegalPromotion
 
 sealed trait GameStateError extends GameValidationError
 case object NoKingError extends GameStateError

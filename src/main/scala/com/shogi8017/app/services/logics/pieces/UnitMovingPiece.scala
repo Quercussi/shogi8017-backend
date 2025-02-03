@@ -19,6 +19,7 @@ trait UnitMovingPiece extends Piece {
   }
 
   protected def canUnitMoveTo(board: Board, move: MoveAction, legalDirections: List[Direction]): Boolean = {
-    legalDirections.exists(direction => canOccupy(board, move.to, direction))
+    val direction = Direction.calculateDirection(move.from, move.to)
+    canOccupy(board, move.from, direction) && legalDirections.contains(direction)
   }
 }

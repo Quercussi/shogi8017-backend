@@ -11,8 +11,10 @@ case class Position(x: Int, y: Int) {
    * @return `true` if this position is under attack by any of the opponent's pieces, `false` otherwise.
    */
   def isUnderAttack(board: Board, player: Player): Boolean = {
-    val opponent = if player == Player.WHITE_PLAYER then Player.BLACK_PLAYER else Player.WHITE_PLAYER
+    val opponent = Player.opponent(player)
     existsPlayerPieces(board,opponent) { (currentPosition, piece) =>
+      // TODO: remove k
+      val k = piece.getBoardTransitionOnMove(board, MoveAction(currentPosition, this)).isValid
       piece.getBoardTransitionOnMove(board, MoveAction(currentPosition, this)).isValid
     }
   }

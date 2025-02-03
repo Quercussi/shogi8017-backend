@@ -33,7 +33,7 @@ case class Pawn(owner: Player) extends Piece with UnitMovingPieceMethods with Dr
     pieceWithNoMoves || twoPawns || dropPawnMate
   }
   
-  override def forcedPromotionRank: Option[Int] = Some(Pawn.forcedPromotionRank(this.owner))
+  override def forcedPromotionRanks: Option[List[Int]] = Some(Pawn.forcedPromotionRanks(this.owner))
 }
 
 object Pawn {
@@ -45,7 +45,7 @@ object Pawn {
     if (owner == Player.WHITE_PLAYER) 9 else 1
   }
   
-  private def forcedPromotionRank(owner: Player): Int = {
-    if (owner == Player.WHITE_PLAYER) 9 else 1
+  private def forcedPromotionRanks(owner: Player): List[Int] = {
+    List(if (owner == Player.WHITE_PLAYER) 9 else 1)
   }
 }

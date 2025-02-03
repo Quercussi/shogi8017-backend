@@ -21,7 +21,7 @@ trait Piece() {
   def getBoardTransitionOnDrop(board: Board, drop: DropAction): Validated[ActionValidationError, BoardTransition]
 
   def getAllPossibleMoves(board: Board, position: Position): Set[Position]
-  
+
   private def isSelfPin(board: Board, move: MoveAction): Boolean = {
     val (from, to) = move.getFromToPositions
     
@@ -29,11 +29,13 @@ trait Piece() {
       piecesMap = board.piecesMap - from + (to -> board.piecesMap(from))
     )
 
+    // TODO: remove k
+    val k = isChecked(tempBoard, this.owner)
     isChecked(tempBoard, this.owner)
   }
-  
-  protected def canOccupy(board: Board, position: Position, direction: Direction): Boolean = {
-    val destination = position.move(direction)
+
+  protected def canOccupy(board: Board, from: Position, direction: Direction): Boolean = {
+    val destination = from.move(direction)
     !destination.isOutOfBoard && board.piecesMap.get(destination).forall(_.owner != this.owner)
   }
 
@@ -46,7 +48,7 @@ trait Piece() {
 object Piece {
   def validateAndApplyAction(piece: Piece, board: Board, action: PlayerAction): Validated[ActionValidationError, BoardStateTransition] = {
     val validationFunction: PartialFunction[PlayerAction, Validated[ActionValidationError, BoardTransition]] = {
-      case move: MoveAction if piece.isSelfPin(board, move) =>
+      case move: MoveAction if !piece.isSelfPin(board, move) =>
         piece.getBoardTransitionOnMove(board, move)
       case _: MoveAction =>
         Invalid(IllegalMove)

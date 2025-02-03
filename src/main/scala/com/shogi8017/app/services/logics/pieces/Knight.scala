@@ -9,27 +9,30 @@ case class Knight(owner: Player) extends Piece with UnitMovingPieceMethods with 
     PromotablePieceType.KNIGHT
   }
 
-  def unitDirections: List[Direction] = Knight.directions
+  def unitDirections: List[Direction] = Knight.directions(this.owner)
 
   override def additionalDropValidation(board: Board, drop: DropAction): Boolean = {
-    drop.position.y != Knight.undroppableRank(this.owner)
+    Knight.undroppableRanks(this.owner).contains(drop.position.y)
   }
-  
-  override def forcedPromotionRank: Option[Int] = Some(Knight.forcedPromotionRank(this.owner))
+
+  override def forcedPromotionRanks: Option[List[Int]] = Some(Knight.forcedPromotionRanks(this.owner))
 }
 
 
 object Knight {
-  val directions: List[Direction] = List(
-    Direction(1, 2),
-    Direction(-1, 2),
-  )
-  
-  private def undroppableRank(owner: Player): Int = {
-    if (owner == Player.WHITE_PLAYER) 8 else 2
+  def directions(player: Player): List[Direction] = {
+    val y_dir = if (player == Player.WHITE_PLAYER) 2 else -2
+    List(
+      Direction(1, y_dir),
+      Direction(-1, y_dir),
+    )
   }
 
-  private def forcedPromotionRank(owner: Player): Int = {
-    if (owner == Player.WHITE_PLAYER) 8 else 2
+  private def undroppableRanks(owner: Player): List[Int] = {
+    if (owner == Player.WHITE_PLAYER) List(8,9) else List(2,1)
+  }
+
+  private def forcedPromotionRanks(owner: Player): List[Int] = {
+    if (owner == Player.WHITE_PLAYER) List(8,9) else List(2,1)
   }
 }

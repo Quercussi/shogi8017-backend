@@ -33,7 +33,7 @@ trait RangedMovingPiece extends Piece with UnitMovingPiece {
     val prod = ai*bi + aj*bj
     val aMagSqr = ai*ai + aj*aj
     val bMagSqr = bi*bi + bj*bj
-    prod * prod == aMagSqr * bMagSqr
+    prod > 0 && prod * prod == aMagSqr * bMagSqr
   }
 
   private def isCorrectDirection(board: Board, move: MoveAction, legalDirections: List[Direction]): Boolean = {
