@@ -2,15 +2,16 @@ package com.shogi8017.app.services.logics
 
 import cats.data.Validated.{Invalid, Valid}
 import com.shogi8017.app.services.logics.Board.executeMove
+import com.shogi8017.app.services.logics.pieces.Piece
 import org.scalatest.Assertions.fail
 
 object LogicTestUtils {
-  def testMove(player: Player, playerAction: PlayerAction, expectedPiece: Piece, board: Board = Board.defaultInitialPosition): Board = {
+  def testMove(player: Player, playerAction: MoveAction, expectedPiece: Piece, board: Board = Board.defaultInitialPosition): Board = {
     val result = executeMove(board, player, playerAction)
 
     result match {
       case Valid((newBoard, _, _, _)) =>
-        assert(newBoard.pieces.get(playerAction.getFields._2).contains(expectedPiece))
+        assert(newBoard.piecesMap.get(playerAction.to).contains(expectedPiece))
         newBoard
       case invalid =>
         println(s"Move failed with result: $invalid")
@@ -19,7 +20,7 @@ object LogicTestUtils {
     }
   }
 
-  def testMoveError(player: Player, playerAction: PlayerAction, expectedException: Exception, board: Board = Board.defaultInitialPosition): Unit = {
+  def testMoveError(player: Player, playerAction: MoveAction, expectedException: Exception, board: Board = Board.defaultInitialPosition): Unit = {
     val result = executeMove(board, player, playerAction)
 
     result match {
