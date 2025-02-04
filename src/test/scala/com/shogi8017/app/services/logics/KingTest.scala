@@ -1,272 +1,184 @@
 package com.shogi8017.app.services.logics
 
-import com.shogi8017.app.errors.IllegalMove
+import com.shogi8017.app.errors.{CannotPromote, IllegalMove}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
-import com.shogi8017.app.services.logics.Player.*
+import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.pieces.{King, Knight, Rook}
 import org.scalatest.funsuite.AnyFunSuite
 
 class KingTest extends AnyFunSuite:
-  test("A King should move like a unit star") {
-    val aroundMoves = for {
-      dx <- -1 to 1
+  private def generateUStarPositions(start: Position): Seq[Position] = {
+    (for (
+      dx <- -1 to 1;
       dy <- -1 to 1
       if dx != 0 || dy != 0
-    } yield (dx, dy)
+    ) yield Direction(dx, dy))
+      .map(d => start.move(d))
+      .filter(!_.isOutOfBoard)
+  }
 
-    val emptyBoard = Board.emptyBoard
-    val newPieces = emptyBoard.pieces
-      - Position(5, 1)
-      - Position(5, 8)
-      + (Position(4, 4) -> King(WHITE_PLAYER, true))
-      + (Position(7, 7) -> King(BLACK_PLAYER, true))
+  private def getAllPosition: Seq[Position] = {
+    for {
+      row <- 1 to 9
+      col <- 1 to 9
+    } yield Position(row, col)
+  }
 
+  test("A King should move like a star") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(5, 2) -> King(WHITE_PLAYER),
+        Position(5, 8) -> King(BLACK_PLAYER)
+      )
+    )
+    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
-    val newBoard1 = Board(newPieces)
-    val whitePos = Position(4,4)
-    aroundMoves.foreach((x, y) =>
-      testMove(WHITE_PLAYER, PlayerAction(whitePos, whitePos.move(x, y)), King(WHITE_PLAYER, true), newBoard1)
+    val testSeqWhite = generateUStarPositions(Position(5, 2))
+    testSeqWhite.foreach(pos => testMove(WHITE_PLAYER, MoveAction(Position(5, 2), pos), King(WHITE_PLAYER), s0))
+
+    val testSeqBlack = generateUStarPositions(Position(5, 8))
+    testSeqBlack.foreach(pos => testMove(BLACK_PLAYER, MoveAction(Position(5, 8), pos), King(BLACK_PLAYER), s1))
+  }
+
+  test("A King should not move like something else") {
+    val s0 = Board.emptyBoard
+    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+
+    val whiteReachablePositions = generateUStarPositions(Position(5, 1))
+    val testSeqWhite = getAllPosition.filterNot(p => whiteReachablePositions.contains(p) || p == Position(5, 1))
+    testSeqWhite.foreach(pos => testMoveError(WHITE_PLAYER, MoveAction(Position(5, 1), pos), IllegalMove, s0))
+
+    val blackReachablePositions = generateUStarPositions(Position(5, 9))
+    val testSeqBlack = getAllPosition.filterNot(p => blackReachablePositions.contains(p) || p == Position(5, 9))
+    testSeqBlack.foreach(pos => testMoveError(BLACK_PLAYER, MoveAction(Position(5, 9), pos), IllegalMove, s1))
+  }
+
+  test("A King cannot move into check") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(5, 2) -> King(WHITE_PLAYER),
+        Position(5, 8) -> King(BLACK_PLAYER),
+
+        Position(1, 1) -> Rook(BLACK_PLAYER),
+        Position(1, 3) -> Rook(BLACK_PLAYER),
+        Position(1, 7) -> Rook(WHITE_PLAYER),
+        Position(1, 9) -> Rook(WHITE_PLAYER),
+        Position(5, 6) -> Knight(WHITE_PLAYER),
+        Position(5, 4) -> Knight(BLACK_PLAYER),
+      )
+    )
+    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+
+    //  a b c d e f g h i
+    //9 R . . . . . . . .
+    //8 . . . . k . . . .
+    //7 R . . . . . . . .
+    //6 . . . . N . . . .
+    //5 . . . . . . . . .
+    //4 . . . . n . . . .
+    //3 r . . . . . . . .
+    //2 . . . . K . . . .
+    //1 r . . . . . . . .
+
+    val testSeqWhite = generateUStarPositions(Position(5, 2))
+    testSeqWhite.foreach(pos => testMoveError(WHITE_PLAYER, MoveAction(Position(5, 2), pos), IllegalMove, s0))
+    val testSeqBlack = generateUStarPositions(Position(5, 8))
+    testSeqBlack.foreach(pos => testMoveError(BLACK_PLAYER, MoveAction(Position(5, 8), pos), IllegalMove, s1))
+  }
+
+  test("A King should capture like a star") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(5, 2) -> King(WHITE_PLAYER),
+        Position(5, 8) -> King(BLACK_PLAYER)
+      )
+    )
+    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+
+    generateUStarPositions(Position(5, 2)).foreach(pos =>
+      val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(BLACK_PLAYER)))
+      val r = testMove(WHITE_PLAYER, MoveAction(Position(5, 2), pos), King(WHITE_PLAYER), s0_temp)
+      assert(r.piecesMap.size == 2)
     )
 
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(3, 4), Position(4, 4), King(WHITE_PLAYER, true), None)))
-    val blackPos = Position(7,7)
-    aroundMoves.foreach((x, y) => testMove(BLACK_PLAYER, PlayerAction(blackPos, blackPos.move(x,y)), King(BLACK_PLAYER, true), newBoard2))
+    generateUStarPositions(Position(5, 8)).foreach(pos =>
+      val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(WHITE_PLAYER)))
+      val r = testMove(BLACK_PLAYER, MoveAction(Position(5, 8), pos), King(BLACK_PLAYER), s1_temp)
+      assert(r.piecesMap.size == 2)
+    )
   }
 
-  test("A King should not be checked after a move") {
-    val emptyBoard = Board.emptyBoard
-    val newPieces = emptyBoard.pieces
-      - Position(5, 1)
-      - Position(5, 8)
-      + (Position(4, 4) -> King(WHITE_PLAYER, true))
-      + (Position(6, 5) -> King(BLACK_PLAYER, true))
+  test("A King should not capture a piece of its own side") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(5, 2) -> King(WHITE_PLAYER),
+        Position(5, 8) -> King(BLACK_PLAYER)
+      )
+    )
+    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
-    val newBoard1 = Board(newPieces)
-    val whitePos = Position(4,4)
-    testMoveError(WHITE_PLAYER, PlayerAction(whitePos, Position(5, 5)), IllegalMove, newBoard1)
+    generateUStarPositions(Position(5, 2)).foreach(pos =>
+      val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(WHITE_PLAYER)))
+      testMoveError(WHITE_PLAYER, MoveAction(Position(5, 2), pos), IllegalMove, s0_temp)
+    )
 
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(3, 4), Position(4, 4), King(WHITE_PLAYER, true), None)))
-    val blackPos = Position(6,5)
-    testMoveError(WHITE_PLAYER, PlayerAction(whitePos, Position(5, 5)), IllegalMove, newBoard1)
+    generateUStarPositions(Position(5, 8)).foreach(pos =>
+      val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(BLACK_PLAYER)))
+      testMoveError(BLACK_PLAYER, MoveAction(Position(5, 8), pos), IllegalMove, s1_temp)
+    )
   }
 
-  test("A king should not move like something else") {
-    val emptyBoard = Board.emptyBoard
-    val newPieces = emptyBoard.pieces
-      - Position(5, 1)
-      - Position(5, 8)
-      + (Position(2, 2) -> King(WHITE_PLAYER, true))
-      + (Position(7, 7) -> King(BLACK_PLAYER, true))
+  test("A King should not capture like something else") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(5, 2) -> King(WHITE_PLAYER),
+        Position(5, 8) -> King(BLACK_PLAYER),
+        Position(6, 1) -> Knight(WHITE_PLAYER),
+        Position(6, 4) -> Knight(BLACK_PLAYER)
+      )
+    )
+    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
-    val newBoard1 = Board(newPieces)
-    val whitePos = Position(2,2)
-    val testingMoves1 = List((2,1),(2,-1),(-1,5),(-1,3),(1,2),(-1,2))
-    testingMoves1.foreach((x, y) => testMoveError(WHITE_PLAYER, PlayerAction(whitePos, whitePos.move(x, y)), IllegalMove, newBoard1))
-
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(1, 1), Position(4, 4), King(WHITE_PLAYER, true), None)))
-    val blackPos = Position(7,7)
-    val testingMoves2 = List((-2,-1),(-2,1),(-1,-6),(1,-3),(1,-2),(-1,-3),(-1,-2))
-    testingMoves2.foreach((x, y) => testMoveError(BLACK_PLAYER, PlayerAction(blackPos, blackPos.move(x, y)), IllegalMove, newBoard2))
+    testMoveError(WHITE_PLAYER, MoveAction(Position(5, 2), Position(6, 4)), IllegalMove, s0)
+    testMoveError(BLACK_PLAYER, MoveAction(Position(5, 8), Position(6, 1)), IllegalMove, s1)
   }
 
-  test("A king should capture like a unit star") {
-    val emptyBoard = Board.emptyBoard
-    val newPieces = emptyBoard.pieces
-      + (Position(5, 2) -> Pawn(BLACK_PLAYER, true))
-      + (Position(5, 7) -> Pawn(WHITE_PLAYER, true))
+  test("King should not me able to promote") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(5, 6) -> King(WHITE_PLAYER),
+        Position(5, 4) -> King(BLACK_PLAYER)
+      )
+    )
+    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
-    val newBoard1 = Board(newPieces)
-    val whitePos = Position(5,1)
-    testMove(WHITE_PLAYER, PlayerAction(whitePos, Position(5, 2)), King(WHITE_PLAYER, true), newBoard1)
-
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(6, 1), Position(5, 1), King(WHITE_PLAYER, true), None)))
-    val blackPos = Position(5,8)
-    testMove(BLACK_PLAYER, PlayerAction(blackPos, Position(5, 7)), King(BLACK_PLAYER, true), newBoard2)
+    (4 to 6).foreach(col => testMoveError(WHITE_PLAYER, MoveAction(Position(5, 6), Position(col, 7), true), CannotPromote, s0))
+    (4 to 6).foreach(col => testMoveError(BLACK_PLAYER, MoveAction(Position(5, 4), Position(col, 3), true), CannotPromote, s1))
   }
 
-  test("A king should not capture a piece of its own side") {
-    val emptyBoard = Board.emptyBoard
-    val newPieces = emptyBoard.pieces
-      + (Position(5, 2) -> Pawn(WHITE_PLAYER, true))
-      + (Position(5, 7) -> Pawn(BLACK_PLAYER, true))
+//  test("King must be able to return `getAllPossibleMoves` correctly") {
+//    val s0 = Board.emptyBoard.copy(
+//      piecesMap = Board.emptyBoard.piecesMap ++ Map(
+//        Position(1, 1) -> King(WHITE_PLAYER),
+//        Position(2, 8) -> King(WHITE_PLAYER),
+//        Position(3, 9) -> King(BLACK_PLAYER),
+//        Position(4, 2) -> King(BLACK_PLAYER)
+//      )
+//    )
+//    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+//    
+//    val allPositions = for {
+//      row <- 1 to 9
+//      col <- 1 to 9
+//    } yield Position(row, col)
+//    
+//    val allDroppablePosition = allPositions.filterNot(s0.piecesMap.contains)
+//    
+//    allDroppablePosition.foreach(pos => {
+//      val King = King(WHITE_PLAYER)
+//      val tempBoard = s0.copy(piecesMap = s0.piecesMap + (pos -> King))
+//      assert(King.getAllPossibleMoves(tempBoard, pos) == allPositions)
+//    })
+//  }
 
-    val newBoard1 = Board(newPieces)
-    val whitePos = Position(5,1)
-    testMoveError(WHITE_PLAYER, PlayerAction(whitePos, Position(5, 2)), IllegalMove, newBoard1)
-
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(6, 1), Position(5, 1), King(WHITE_PLAYER, true), None)))
-    val blackPos = Position(5,8)
-    testMoveError(BLACK_PLAYER, PlayerAction(blackPos, Position(5, 7)), IllegalMove, newBoard2)
-  }
-
-  test("A king should not capture like something else") {
-    val emptyBoard = Board.emptyBoard
-    val newPieces = emptyBoard.pieces
-      + (Position(5, 5) -> Pawn(BLACK_PLAYER, true))
-      + (Position(5, 6) -> Pawn(WHITE_PLAYER, true))
-
-    val newBoard1 = Board(newPieces)
-    val whitePos = Position(5,1)
-    testMoveError(WHITE_PLAYER, PlayerAction(whitePos, Position(5, 5)), IllegalMove, newBoard1)
-
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(6, 1), Position(5, 1), King(WHITE_PLAYER, true), None)))
-    val blackPos = Position(5,8)
-    testMoveError(BLACK_PLAYER, PlayerAction(blackPos, Position(5, 6)), IllegalMove, newBoard2)
-  }
-
-  test("A king should be able to castle") {
-    val defaultBoard = Board.defaultInitialPosition
-    val newPieces = defaultBoard.pieces
-      - Position(2, 1) - Position(2, 8)
-      - Position(3, 1) - Position(3, 8)
-      - Position(4, 1) - Position(4, 8)
-      - Position(6, 1) - Position(6, 8)
-      - Position(7, 1) - Position(7, 8)
-
-    //  a b c d e f g h
-    //8 r . . . k . . r
-    //7 p p p p p p p p
-    //6 . . . . . . . .
-    //5 . . . . . . . .
-    //4 . . . . . . . .
-    //3 . . . . . . . .
-    //2 P P P P P P P P
-    //1 r . . . K . . r
-
-    val newBoard1 = Board(newPieces)
-    val whiteKingSide = testMove(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(7, 1)), King(WHITE_PLAYER, true), newBoard1)
-    assert(whiteKingSide.pieces.get(Position(7,1)).contains(King(WHITE_PLAYER, true)))
-    assert(whiteKingSide.pieces.get(Position(6,1)).contains(Rook(WHITE_PLAYER, true)))
-    val whiteQueenSide = testMove(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(3, 1)), King(WHITE_PLAYER, true), newBoard1)
-    assert(whiteQueenSide.pieces.get(Position(3,1)).contains(King(WHITE_PLAYER, true)))
-    assert(whiteQueenSide.pieces.get(Position(4,1)).contains(Rook(WHITE_PLAYER, true)))
-
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(4, 1), Position(5, 1), King(WHITE_PLAYER, true), None)))
-    val blackKingSide = testMove(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(7, 8)), King(BLACK_PLAYER, true), newBoard2)
-    assert(blackKingSide.pieces.get(Position(7,8)).contains(King(BLACK_PLAYER, true)))
-    assert(blackKingSide.pieces.get(Position(6,8)).contains(Rook(BLACK_PLAYER, true)))
-    val blackQueenSide = testMove(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(3, 8)), King(BLACK_PLAYER, true), newBoard2)
-    assert(blackQueenSide.pieces.get(Position(3,8)).contains(King(BLACK_PLAYER, true)))
-    assert(blackQueenSide.pieces.get(Position(4,8)).contains(Rook(BLACK_PLAYER, true)))
-  }
-
-  test("A king should not be able to castle after moved") {
-    val defaultBoard = Board.emptyBoard
-    val newPieces = defaultBoard.pieces
-      - Position(5, 1) + (Position(5, 1) -> King(WHITE_PLAYER, true))
-      - Position(5, 8) + (Position(5, 8) -> King(BLACK_PLAYER, true))
-      + (Position(1, 1) -> Rook(WHITE_PLAYER, false))
-      + (Position(8, 1) -> Rook(WHITE_PLAYER, false))
-      + (Position(1, 8) -> Rook(BLACK_PLAYER, false))
-      + (Position(8, 8) -> Rook(BLACK_PLAYER, false))
-
-    //  a b c d e f g h
-    //8 r . . . k . . r
-    //7 p p p p p p p p
-    //6 . . . . . . . .
-    //5 . . . . . . . .
-    //4 . . . . . . . .
-    //3 . . . . . . . .
-    //2 P P P P P P P P
-    //1 r . . . K . . r
-
-    val newBoard1 = Board(newPieces)
-    testMoveError(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(7, 1)), IllegalMove, newBoard1)
-    testMoveError(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(3, 1)), IllegalMove, newBoard1)
-
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(1, 1), Position(5, 1), King(WHITE_PLAYER, true), None)))
-    testMoveError(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(7, 8)), IllegalMove, newBoard2)
-    testMoveError(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(3, 8)), IllegalMove, newBoard2)
-  }
-
-  test("A king should not be able to castle if the rook is moved") {
-    val defaultBoard = Board.emptyBoard
-    val newPieces = defaultBoard.pieces
-      - Position(5, 1) + (Position(5, 1) -> King(WHITE_PLAYER, false))
-      - Position(5, 8) + (Position(5, 8) -> King(BLACK_PLAYER, false))
-      + (Position(1, 1) -> Rook(WHITE_PLAYER, false))
-      + (Position(8, 1) -> Rook(WHITE_PLAYER, true))
-      + (Position(1, 8) -> Rook(BLACK_PLAYER, true))
-      + (Position(8, 8) -> Rook(BLACK_PLAYER, false))
-
-    //  a b c d e f g h
-    //8 r . . . k . . r
-    //7 p p p p p p p p
-    //6 . . . . . . . .
-    //5 . . . . . . . .
-    //4 . . . . . . . .
-    //3 . . . . . . . .
-    //2 P P P P P P P P
-    //1 r . . . K . . r
-
-    val newBoard1 = Board(newPieces)
-    testMoveError(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(7, 1)), IllegalMove, newBoard1)
-    val whiteQueenSide = testMove(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(3, 1)), King(WHITE_PLAYER, true), newBoard1)
-    assert(whiteQueenSide.pieces.get(Position(3,1)).contains(King(WHITE_PLAYER, true)))
-    assert(whiteQueenSide.pieces.get(Position(4,1)).contains(Rook(WHITE_PLAYER, true)))
-
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(1, 1), Position(5, 1), King(WHITE_PLAYER, true), None)))
-    val blackKingSide = testMove(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(7, 8)), King(BLACK_PLAYER, true), newBoard2)
-    assert(blackKingSide.pieces.get(Position(7,8)).contains(King(BLACK_PLAYER, true)))
-    assert(blackKingSide.pieces.get(Position(6,8)).contains(Rook(BLACK_PLAYER, true)))
-    testMoveError(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(3, 8)), IllegalMove, newBoard2)
-  }
-
-  test("A king should not be able to castle when checked") {
-    val defaultBoard = Board.emptyBoard
-    val newPieces = defaultBoard.pieces
-      + (Position(1, 1) -> Rook(WHITE_PLAYER, false))
-      + (Position(8, 1) -> Rook(WHITE_PLAYER, false))
-      + (Position(1, 8) -> Rook(BLACK_PLAYER, false))
-      + (Position(8, 8) -> Rook(BLACK_PLAYER, false))
-      + (Position(5, 4) -> Rook(BLACK_PLAYER, true))
-      + (Position(5, 5) -> Rook(WHITE_PLAYER, true))
-
-    //  a b c d e f g h
-    //8 r . . . k . . r
-    //7 . . . . . . . .
-    //6 . . . . . . . .
-    //5 . . . . R . . .
-    //4 . . . . r . . .
-    //3 . . . . . . . .
-    //2 . . . . . . . .
-    //1 R . . . K . . R
-
-    val newBoard1 = Board(newPieces)
-    testMoveError(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(7, 1)), IllegalMove, newBoard1)
-    testMoveError(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(3, 1)), IllegalMove, newBoard1)
-
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(1, 1), Position(5, 1), King(WHITE_PLAYER, true), None)))
-    testMoveError(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(7, 8)), IllegalMove, newBoard2)
-    testMoveError(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(3, 8)), IllegalMove, newBoard2)
-  }
-
-  test("A king should not be able to castle if its path is under attack") {
-    val defaultBoard = Board.emptyBoard
-    val newPieces = defaultBoard.pieces
-      + (Position(1, 1) -> Rook(WHITE_PLAYER, false))
-      + (Position(8, 1) -> Rook(WHITE_PLAYER, false))
-      + (Position(1, 8) -> Rook(BLACK_PLAYER, false))
-      + (Position(8, 8) -> Rook(BLACK_PLAYER, false))
-      + (Position(6, 4) -> Rook(BLACK_PLAYER, true))
-      + (Position(4, 4) -> Rook(BLACK_PLAYER, true))
-      + (Position(6, 5) -> Rook(WHITE_PLAYER, true))
-      + (Position(4, 5) -> Rook(WHITE_PLAYER, true))
-
-    //  a b c d e f g h
-    //8 r . . . k . . r
-    //7 . . . . . . . .
-    //6 . . . . . . . .
-    //5 . . . R . R . .
-    //4 . . . r . r . .
-    //3 . . . . . . . .
-    //2 . . . . . . . .
-    //1 R . . . K . . R
-
-    val newBoard1 = Board(newPieces)
-    testMoveError(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(7, 1)), IllegalMove, newBoard1)
-    testMoveError(WHITE_PLAYER, PlayerAction(Position(5, 1), Position(3, 1)), IllegalMove, newBoard1)
-
-    val newBoard2 = Board(newPieces, Some(Move(WHITE_PLAYER, Position(1, 1), Position(5, 1), King(WHITE_PLAYER, true), None)))
-    testMoveError(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(7, 8)), IllegalMove, newBoard2)
-    testMoveError(BLACK_PLAYER, PlayerAction(Position(5, 8), Position(3, 8)), IllegalMove, newBoard2)
-  }
+// TODO: drop tests
