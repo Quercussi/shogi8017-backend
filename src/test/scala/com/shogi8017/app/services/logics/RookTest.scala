@@ -119,7 +119,7 @@ class RookTest extends AnyFunSuite:
     testMoveError(BLACK_PLAYER, MoveAction(Position(2, 2), Position(6, 6)), IllegalMove, s1)
   }
 
-  test("Lace should be able to promote when reaching or leaving the last three ranks") {
+  test("Rook should be able to promote when reaching or leaving the last three ranks") {
     val s0 = Board.emptyBoard.copy(
       piecesMap = Board.emptyBoard.piecesMap ++ Map(
         Position(1, 1) -> Rook(WHITE_PLAYER),
@@ -157,5 +157,30 @@ class RookTest extends AnyFunSuite:
     (1 to 8).foreach(col => testMoveError(BLACK_PLAYER, MoveAction(Position(9, 4), Position(col, 4), true), IncorrectPromotionScenario, s1))
     (5 to 9).foreach(row => testMoveError(BLACK_PLAYER, MoveAction(Position(9, 4), Position(9, row), true), IncorrectPromotionScenario, s1))
   }
+
+//  test("Rook must be able to return `getAllPossibleMoves` correctly") {
+//    val s0 = Board.emptyBoard.copy(
+//      piecesMap = Board.emptyBoard.piecesMap ++ Map(
+//        Position(1, 1) -> Rook(WHITE_PLAYER),
+//        Position(2, 8) -> Rook(WHITE_PLAYER),
+//        Position(3, 9) -> Rook(BLACK_PLAYER),
+//        Position(4, 2) -> Rook(BLACK_PLAYER)
+//      )
+//    )
+//    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+//    
+//    val allPositions = for {
+//      row <- 1 to 9
+//      col <- 1 to 9
+//    } yield Position(row, col)
+//    
+//    val allDroppablePosition = allPositions.filterNot(s0.piecesMap.contains)
+//    
+//    allDroppablePosition.foreach(pos => {
+//      val rook = Rook(WHITE_PLAYER)
+//      val tempBoard = s0.copy(piecesMap = s0.piecesMap + (pos -> rook))
+//      assert(rook.getAllPossibleMoves(tempBoard, pos) == allPositions)
+//    })
+//  }
 
   // TODO: drop tests

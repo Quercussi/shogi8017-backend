@@ -60,7 +60,7 @@ object Board {
   }
   
   def emptyBoard: Board = Board(
-    Map(Position(5,1) -> King(WHITE_PLAYER), Position(5,8) -> King(BLACK_PLAYER)),
+    Map(Position(5,1) -> King(WHITE_PLAYER), Position(5,9) -> King(BLACK_PLAYER)),
   )
 
   def fromMovesList(moveList: List[(Player, MoveAction)]): Validated[GameValidationError, Board] = {
@@ -95,8 +95,11 @@ object Board {
       }
     }
 
-    def validatePieceExistence(from: Position): Validated[ActionValidationError, Piece] = {
+    def validatePieceExistenceAndOwnership(from: Position, owner: Player): Validated[ActionValidationError, Piece] = {
       Validated.cond(isOccupied(board, from), board.piecesMap(from), UnoccupiedPosition)
+        .andThen { piece =>
+          Validated.cond(piece.owner == owner, piece, NotOwnerOfPiece)
+        }
     }
 
     def processMove(board: Board, player: Player, playerAction: MoveAction)(piece: Piece): (Piece, Validated[GameValidationError, BoardStateTransition]) = {
@@ -133,10 +136,9 @@ object Board {
       }
     }
 
-    val (from, to) = playerAction.getFromToPositions
     validateGameState(player)
       .andThen(_ => validatePlayerAction(player, playerAction))
-      .andThen(_ => validatePieceExistence(from))
+      .andThen(_ => validatePieceExistenceAndOwnership(playerAction.from, player))
       .andThen(processGameEvent compose processMove(board, player, playerAction))
   }
 
@@ -145,6 +147,7 @@ object Board {
       case None => currentPlayer == BLACK_PLAYER
       case Some(lastAction) => lastAction.player == currentPlayer
 
+  // TODO: check impasse
   private def isStalemate(board: Board, player: Player): Boolean = {
     !isChecked(board, player) && !forallPlayerPieces(board, player) { (position, piece) =>
       piece.hasLegalMoves(board, position)
@@ -188,6 +191,7 @@ object Board {
 
   def isChecked(board: Board, player: Player): Boolean = {
     val kingPosition = getKingPosition(board, player)
+    // TODO: remove k
     val k = kingPosition.exists(_.isUnderAttack(board, player))
     kingPosition.exists(_.isUnderAttack(board, player))
   }
@@ -208,7 +212,7 @@ object Board {
         !isChecked(tempBoard, player)
       }
     }
-    
+
     lazy val dropEscape = existsPlayerHands(board, player) {
       case piece@(droppablePiece: DroppablePiece) =>
         droppablePiece.getAllPossibleDrops(board).exists { to =>

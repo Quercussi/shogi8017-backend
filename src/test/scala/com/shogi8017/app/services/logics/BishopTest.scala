@@ -86,14 +86,14 @@ class BishopTest extends AnyFunSuite:
     val s0 = Board.emptyBoard.copy(
       piecesMap = Board.emptyBoard.piecesMap ++ Map(
         Position(4, 4) -> Bishop(WHITE_PLAYER),
-        Position(6, 7) -> Knight(WHITE_PLAYER),
+        Position(6, 6) -> Knight(WHITE_PLAYER),
         Position(4, 6) -> Bishop(BLACK_PLAYER),
         Position(2, 6) -> Knight(BLACK_PLAYER)
       )
     )
     val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
-    testMoveError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(6, 7)), IllegalMove, s0)
+    testMoveError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(6, 6)), IllegalMove, s0)
     testMoveError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(2, 6)), IllegalMove, s1)
   }
 
@@ -110,7 +110,7 @@ class BishopTest extends AnyFunSuite:
     testMoveError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(4, 4)), IllegalMove, s1)
   }
 
-  test("Lace should be able to promote when reaching or leaving the last three ranks") {
+  test("A Bishop should be able to promote when reaching or leaving the last three ranks") {
     val s0 = Board.emptyBoard.copy(
       piecesMap = Board.emptyBoard.piecesMap ++ Map(
         Position(1, 6) -> Bishop(WHITE_PLAYER),

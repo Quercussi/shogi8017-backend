@@ -105,7 +105,7 @@ class LanceTest extends AnyFunSuite:
     val s0 = Board.emptyBoard.copy(
       piecesMap = Board.emptyBoard.piecesMap ++ Map(
         Position(2, 6) -> Lance(WHITE_PLAYER),
-        Position(5, 4) -> Lance(BLACK_PLAYER)
+        Position(6, 4) -> Lance(BLACK_PLAYER)
       )
     )
     val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
@@ -113,15 +113,15 @@ class LanceTest extends AnyFunSuite:
     testMoveError(WHITE_PLAYER, MoveAction(Position(2, 6), Position(2, 9), false), ExpectingPromotion, s0)
     testMove(WHITE_PLAYER, MoveAction(Position(2, 6), Position(2, 9), true), PromotedLance(WHITE_PLAYER), s0)
 
-    testMoveError(BLACK_PLAYER, MoveAction(Position(5, 4), Position(5, 1), false), ExpectingPromotion, s1)
-    testMove(BLACK_PLAYER, MoveAction(Position(5, 4), Position(5, 1), true), PromotedLance(BLACK_PLAYER), s1)
+    testMoveError(BLACK_PLAYER, MoveAction(Position(6, 4), Position(6, 1), false), ExpectingPromotion, s1)
+    testMove(BLACK_PLAYER, MoveAction(Position(6, 4), Position(6, 1), true), PromotedLance(BLACK_PLAYER), s1)
   }
 
-  test("Lace should be able to promote when reaching the last three ranks") {
+  test("Lance should be able to promote when reaching the last three ranks") {
     val s0 = Board.emptyBoard.copy(
       piecesMap = Board.emptyBoard.piecesMap ++ Map(
         Position(2, 6) -> Lance(WHITE_PLAYER),
-        Position(5, 4) -> Lance(BLACK_PLAYER)
+        Position(6, 4) -> Lance(BLACK_PLAYER)
       )
     )
     val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
@@ -129,8 +129,8 @@ class LanceTest extends AnyFunSuite:
     testMove(WHITE_PLAYER, MoveAction(Position(2, 6), Position(2, 8), false), Lance(WHITE_PLAYER), s0)
     testMove(WHITE_PLAYER, MoveAction(Position(2, 6), Position(2, 8), true), PromotedLance(WHITE_PLAYER), s0)
 
-    testMove(BLACK_PLAYER, MoveAction(Position(5, 4), Position(5, 2), false), Lance(BLACK_PLAYER), s1)
-    testMove(BLACK_PLAYER, MoveAction(Position(5, 4), Position(5, 2), true), PromotedLance(BLACK_PLAYER), s1)
+    testMove(BLACK_PLAYER, MoveAction(Position(6, 4), Position(6, 2), false), Lance(BLACK_PLAYER), s1)
+    testMove(BLACK_PLAYER, MoveAction(Position(6, 4), Position(6, 2), true), PromotedLance(BLACK_PLAYER), s1)
   }
 
   test("Lance cannot promote outside the last three rank") {

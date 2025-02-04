@@ -1,7 +1,7 @@
 package com.shogi8017.app.websocketPayloads
 
 import cats.syntax.functor._
-import com.shogi8017.app.services.logics.PlayerAction
+import com.shogi8017.app.services.logics.MoveAction
 import io.circe.{Decoder, Json}
 import io.circe.generic.semiauto.deriveDecoder
 
@@ -16,7 +16,7 @@ sealed trait GameEventRequest extends WebSocketRequestBody
  *
  * @param move The player's move.
  */
-case class MakeMoveRequest(move: PlayerAction) extends GameEventRequest
+case class MakeMoveRequest(move: MoveAction) extends GameEventRequest
 
 /**
  * A case class representing a request to resign from the game.

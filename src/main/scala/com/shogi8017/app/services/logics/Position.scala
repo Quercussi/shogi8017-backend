@@ -1,6 +1,7 @@
 package com.shogi8017.app.services.logics
 
 import com.shogi8017.app.services.logics.Board.*
+import com.shogi8017.app.services.logics.pieces.PromotablePiece
 
 case class Position(x: Int, y: Int) {
   /**
@@ -12,10 +13,16 @@ case class Position(x: Int, y: Int) {
    */
   def isUnderAttack(board: Board, player: Player): Boolean = {
     val opponent = Player.opponent(player)
-    existsPlayerPieces(board,opponent) { (currentPosition, piece) =>
-      // TODO: remove k
-      val k = piece.getBoardTransitionOnMove(board, MoveAction(currentPosition, this)).isValid
-      piece.getBoardTransitionOnMove(board, MoveAction(currentPosition, this)).isValid
+
+    existsPlayerPieces(board, opponent) { (currentPosition, piece) =>
+      val moveAction = MoveAction(currentPosition, this)
+
+      piece match {
+        case promotablePiece: PromotablePiece =>
+          promotablePiece.getBoardTransitionOnMove(board, moveAction.copy(toPromote = false)).isValid ||
+            promotablePiece.getBoardTransitionOnMove(board, moveAction.copy(toPromote = true)).isValid
+        case _ => piece.getBoardTransitionOnMove(board, moveAction).isValid
+      }
     }
   }
 
