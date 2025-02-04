@@ -16,14 +16,7 @@ class KingTest extends AnyFunSuite:
       .map(d => start.move(d))
       .filter(!_.isOutOfBoard)
   }
-
-  private def getAllPosition: Seq[Position] = {
-    for {
-      row <- 1 to 9
-      col <- 1 to 9
-    } yield Position(row, col)
-  }
-
+  
   test("A King should move like a star") {
     val s0 = Board.emptyBoard.copy(
       piecesMap = Map(

@@ -40,17 +40,12 @@ class BishopTest extends AnyFunSuite:
     )
     val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
-    val allPositions = for {
-      row <- 1 to 9
-      col <- 1 to 9
-    } yield Position(row, col)
-
     val whiteReachablePositions = generateDiagonalPositions(Position(4, 4))
-    val testSeqWhite = allPositions.filterNot(whiteReachablePositions.contains)
+    val testSeqWhite = getAllPosition.filterNot(whiteReachablePositions.contains)
     testMoveError(WHITE_PLAYER, MoveAction(Position(4, 4), testSeqWhite.head), IllegalMove, s0)
 
     val blackReachablePositions = generateDiagonalPositions(Position(4, 6))
-    val testSeqBlack = allPositions.filterNot(blackReachablePositions.contains)
+    val testSeqBlack = getAllPosition.filterNot(blackReachablePositions.contains)
     testMoveError(BLACK_PLAYER, MoveAction(Position(4, 6), testSeqBlack.head), IllegalMove, s1)
   }
 

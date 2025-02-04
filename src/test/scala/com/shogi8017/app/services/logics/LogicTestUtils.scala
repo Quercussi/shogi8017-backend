@@ -6,6 +6,13 @@ import com.shogi8017.app.services.logics.pieces.Piece
 import org.scalatest.Assertions.fail
 
 object LogicTestUtils {
+  def getAllPosition: Seq[Position] = {
+    for {
+      row <- 1 to 9
+      col <- 1 to 9
+    } yield Position(row, col)
+  }
+  
   def testMove(player: Player, playerAction: MoveAction, expectedPiece: Piece, board: Board = Board.defaultInitialPosition): Board = {
     val result = executeMove(board, player, playerAction)
 
