@@ -3,7 +3,9 @@ package com.shogi8017.app.services.logics
 import com.shogi8017.app.errors.{ExpectingPromotion, IllegalMove, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.pieces.PromotablePieceType.LANCE
 import com.shogi8017.app.services.logics.pieces.{Lance, Pawn, PromotedLance}
+import com.shogi8017.app.services.logics.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class LanceTest extends AnyFunSuite:
@@ -68,8 +70,15 @@ class LanceTest extends AnyFunSuite:
     )
     val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
-    testMove(WHITE_PLAYER, MoveAction(Position(4, 2), Position(4, 9), true), PromotedLance(Player.WHITE_PLAYER), s0)
-    testMove(BLACK_PLAYER, MoveAction(Position(4, 9), Position(4, 2), false), Lance(Player.BLACK_PLAYER), s1)
+    val r0 = testMove(WHITE_PLAYER, MoveAction(Position(4, 2), Position(4, 9), true), PromotedLance(Player.WHITE_PLAYER), s0)
+    assert(r0.piecesMap.size == 3)
+    assert(r0.hands.get(WHITE_PLAYER).contains(Multiset(LANCE)))
+    assert(r0.hands.get(BLACK_PLAYER).contains(Multiset.empty))
+
+    val r1 = testMove(BLACK_PLAYER, MoveAction(Position(4, 9), Position(4, 2), false), Lance(Player.BLACK_PLAYER), s1)
+    assert(r1.piecesMap.size == 3)
+    assert(r1.hands.get(BLACK_PLAYER).contains(Multiset(LANCE)))
+    assert(r1.hands.get(WHITE_PLAYER).contains(Multiset.empty))
   }
 
   test("Lance should not capture a piece of its own side") {

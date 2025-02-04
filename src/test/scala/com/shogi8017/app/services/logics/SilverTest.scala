@@ -3,7 +3,9 @@ package com.shogi8017.app.services.logics
 import com.shogi8017.app.errors.{IllegalMove, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.pieces.PromotablePieceType.KNIGHT
 import com.shogi8017.app.services.logics.pieces.{Knight, PromotedSilver, Silver}
+import com.shogi8017.app.services.logics.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class SilverTest extends AnyFunSuite:
@@ -66,6 +68,8 @@ class SilverTest extends AnyFunSuite:
       val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(BLACK_PLAYER)))
       val r0 = testMove(WHITE_PLAYER, MoveAction(Position(2, 2), pos), Silver(WHITE_PLAYER), s0_temp)
       assert(r0.piecesMap.size == 4)
+      assert(r0.hands.get(WHITE_PLAYER).contains(Multiset(KNIGHT)))
+      assert(r0.hands.get(BLACK_PLAYER).contains(Multiset.empty))
     })
 
     val testSeqBlack = generateReachablePositions(BLACK_PLAYER)(Position(8, 8))
@@ -73,6 +77,8 @@ class SilverTest extends AnyFunSuite:
       val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(WHITE_PLAYER)))
       val r1 = testMove(BLACK_PLAYER, MoveAction(Position(8, 8), pos), Silver(BLACK_PLAYER), s1_temp)
       assert(r1.piecesMap.size == 4)
+      assert(r1.hands.get(WHITE_PLAYER).contains(Multiset.empty))
+      assert(r1.hands.get(BLACK_PLAYER).contains(Multiset(KNIGHT)))
     })
   }
 

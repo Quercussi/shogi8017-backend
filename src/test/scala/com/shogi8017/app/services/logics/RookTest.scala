@@ -3,7 +3,9 @@ package com.shogi8017.app.services.logics
 import com.shogi8017.app.errors.{IllegalMove, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.pieces.PromotablePieceType.ROOK
 import com.shogi8017.app.services.logics.pieces.{Knight, PromotedRook, Rook}
+import com.shogi8017.app.services.logics.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class RookTest extends AnyFunSuite:
@@ -86,9 +88,14 @@ class RookTest extends AnyFunSuite:
     val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
     val r1 = testMove(WHITE_PLAYER, MoveAction(Position(6, 6), Position(4, 6)), Rook(WHITE_PLAYER), s0)
-    val r2 = testMove(BLACK_PLAYER, MoveAction(Position(4, 6), Position(6, 6)), Rook(BLACK_PLAYER), s1)
     assert(r1.piecesMap.size == 3)
+    assert(r1.hands.get(WHITE_PLAYER).contains(Multiset(ROOK)))
+    assert(r1.hands.get(BLACK_PLAYER).contains(Multiset.empty))
+
+    val r2 = testMove(BLACK_PLAYER, MoveAction(Position(4, 6), Position(6, 6)), Rook(BLACK_PLAYER), s1)
     assert(r2.piecesMap.size == 3)
+    assert(r2.hands.get(BLACK_PLAYER).contains(Multiset(ROOK)))
+    assert(r2.hands.get(WHITE_PLAYER).contains(Multiset.empty))
   }
 
   test("A rook should not capture a piece of its own side") {
@@ -168,14 +175,14 @@ class RookTest extends AnyFunSuite:
 //      )
 //    )
 //    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
-//    
+//
 //    val allPositions = for {
 //      row <- 1 to 9
 //      col <- 1 to 9
 //    } yield Position(row, col)
-//    
+//
 //    val allDroppablePosition = allPositions.filterNot(s0.piecesMap.contains)
-//    
+//
 //    allDroppablePosition.foreach(pos => {
 //      val rook = Rook(WHITE_PLAYER)
 //      val tempBoard = s0.copy(piecesMap = s0.piecesMap + (pos -> rook))

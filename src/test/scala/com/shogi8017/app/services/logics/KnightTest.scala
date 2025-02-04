@@ -3,7 +3,9 @@ package com.shogi8017.app.services.logics
 import com.shogi8017.app.errors.{ExpectingPromotion, IllegalMove, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.pieces.PromotablePieceType.KNIGHT
 import com.shogi8017.app.services.logics.pieces.{Knight, Pawn, PromotedKnight}
+import com.shogi8017.app.services.logics.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class KnightTest extends AnyFunSuite:
@@ -62,15 +64,26 @@ class KnightTest extends AnyFunSuite:
   }
 
   test("Knight should capture forward") {
-    val defaultBoard = Board.defaultInitialPosition
-    val newPieces = defaultBoard.piecesMap
-      - Position(4, 2)
-      + (Position(4, 4) -> Knight(Player.WHITE_PLAYER))
-      - Position(4, 7)
-      + (Position(3, 6) -> Knight(Player.BLACK_PLAYER))
+    val s0 = Board.defaultInitialPosition.copy(
+      piecesMap = Board.defaultInitialPosition.piecesMap ++ Map(
+        Position(4, 4) -> Knight(WHITE_PLAYER),
+        Position(3, 6) -> Knight(BLACK_PLAYER)
+      ) -- Set(
+        Position(4, 2),
+        Position(4, 7)
+      )
+    )
+    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
-    val newBoard = Board(newPieces)
-    testMove(WHITE_PLAYER, MoveAction(Position(4, 4), Position(3, 6)), Knight(Player.WHITE_PLAYER), newBoard)
+    val r0 = testMove(WHITE_PLAYER, MoveAction(Position(4, 4), Position(3, 6)), Knight(Player.WHITE_PLAYER), s0)
+    assert(r0.piecesMap.size == 40)
+    assert(r0.hands.get(WHITE_PLAYER).contains(Multiset(KNIGHT)))
+    assert(r0.hands.get(BLACK_PLAYER).contains(Multiset.empty))
+
+    val r1 = testMove(BLACK_PLAYER, MoveAction(Position(3, 6), Position(4, 4)), Knight(Player.BLACK_PLAYER), s1)
+    assert(r1.piecesMap.size == 40)
+    assert(r1.hands.get(BLACK_PLAYER).contains(Multiset(KNIGHT)))
+    assert(r1.hands.get(WHITE_PLAYER).contains(Multiset.empty))
   }
 
   test("Knight should not capture a piece of its own side") {
@@ -89,16 +102,17 @@ class KnightTest extends AnyFunSuite:
   }
 
   test("Knight should not capture backward") {
-    val emptyBoard = Board.emptyBoard
-    val newPieces = emptyBoard.piecesMap
-      + (Position(3, 6) -> Knight(Player.WHITE_PLAYER))
-      + (Position(4, 4) -> Knight(Player.BLACK_PLAYER))
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Board.emptyBoard.piecesMap ++ Map(
+        Position(3, 6) -> Knight(WHITE_PLAYER),
+        Position(4, 4) -> Knight(BLACK_PLAYER)
+      )
+    )
+    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
-    val newBoard1 = Board(newPieces)
-    testMoveError(WHITE_PLAYER, MoveAction(Position(3, 6), Position(4, 4)), IllegalMove, newBoard1)
+    testMoveError(WHITE_PLAYER, MoveAction(Position(3, 6), Position(4, 4)), IllegalMove, s0)
 
-    val newBoard2 = Board(piecesMap = newPieces, lastAction = Some(Action(WHITE_PLAYER)))
-    testMoveError(BLACK_PLAYER, MoveAction(Position(4, 4), Position(3, 6)), IllegalMove, newBoard2)
+    testMoveError(BLACK_PLAYER, MoveAction(Position(4, 4), Position(3, 6)), IllegalMove, s1)
   }
 
   test("Knight should promote when reaching the second last rank") {

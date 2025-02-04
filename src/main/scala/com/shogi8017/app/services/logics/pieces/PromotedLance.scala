@@ -7,5 +7,5 @@ case class PromotedLance(owner: Player) extends Piece with UnitMovingPieceMethod
     PromotedPieceType.P_LANCE
   }
 
-  def unitDirections: List[Direction] = Gold.directions
+  def unitDirections: List[Direction] = Gold.directions(this.owner)
 }

@@ -3,7 +3,9 @@ package com.shogi8017.app.services.logics
 import com.shogi8017.app.errors.{CannotPromote, IllegalMove}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.pieces.PromotablePieceType.KNIGHT
 import com.shogi8017.app.services.logics.pieces.{King, Knight, Rook}
+import com.shogi8017.app.services.logics.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class KingTest extends AnyFunSuite:
@@ -16,7 +18,7 @@ class KingTest extends AnyFunSuite:
       .map(d => start.move(d))
       .filter(!_.isOutOfBoard)
   }
-  
+
   test("A King should move like a star") {
     val s0 = Board.emptyBoard.copy(
       piecesMap = Map(
@@ -92,12 +94,16 @@ class KingTest extends AnyFunSuite:
       val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(BLACK_PLAYER)))
       val r = testMove(WHITE_PLAYER, MoveAction(Position(5, 2), pos), King(WHITE_PLAYER), s0_temp)
       assert(r.piecesMap.size == 2)
+      assert(r.hands.get(WHITE_PLAYER).contains(Multiset(KNIGHT)))
+      assert(r.hands.get(BLACK_PLAYER).contains(Multiset.empty))
     )
 
     generateUStarPositions(Position(5, 8)).foreach(pos =>
       val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(WHITE_PLAYER)))
       val r = testMove(BLACK_PLAYER, MoveAction(Position(5, 8), pos), King(BLACK_PLAYER), s1_temp)
       assert(r.piecesMap.size == 2)
+      assert(r.hands.get(BLACK_PLAYER).contains(Multiset(KNIGHT)))
+      assert(r.hands.get(WHITE_PLAYER).contains(Multiset.empty))
     )
   }
 
@@ -136,7 +142,7 @@ class KingTest extends AnyFunSuite:
     testMoveError(BLACK_PLAYER, MoveAction(Position(5, 8), Position(6, 1)), IllegalMove, s1)
   }
 
-  test("King should not me able to promote") {
+  test("King should not be able to promote") {
     val s0 = Board.emptyBoard.copy(
       piecesMap = Map(
         Position(5, 6) -> King(WHITE_PLAYER),
