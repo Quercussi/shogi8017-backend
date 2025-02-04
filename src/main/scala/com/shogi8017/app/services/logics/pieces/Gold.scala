@@ -1,5 +1,6 @@
 package com.shogi8017.app.services.logics.pieces
 
+import com.shogi8017.app.services.logics.Player.WHITE_PLAYER
 import com.shogi8017.app.services.logics.{Direction, Player}
 
 case class Gold(owner: Player) extends Piece with UnitMovingPieceMethods with DroppablePiece {
@@ -7,17 +8,17 @@ case class Gold(owner: Player) extends Piece with UnitMovingPieceMethods with Dr
     UnPromotablePieceType.GOLD
   }
 
-  def unitDirections: List[Direction] = Gold.directions
+  def unitDirections: List[Direction] = Gold.directions(this.owner)
 }
 
 
 object Gold {
-  val directions: List[Direction] = List(
-    Direction(1, 1),
-    Direction(0, 1),
-    Direction(-1, 1),
-    Direction(1, 0),
-    Direction(-1, 0),
-    Direction(0, -1),
-  )
+  def directions(owner: Player): List[Direction] = {
+    val dir = if owner == WHITE_PLAYER then 1 else -1
+    List(
+      Direction(1, 1*dir), Direction(0, 1*dir), Direction(-1, 1*dir),
+      Direction(1, 0), Direction(-1, 0),
+      Direction(0, -1*dir),
+    )
+  }
 }
