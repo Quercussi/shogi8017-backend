@@ -1,10 +1,7 @@
 package com.shogi8017.app.services.logics.pieces
 
-import cats.data.Validated
-import com.shogi8017.app.errors.{ActionValidationError, IllegalMove}
-import com.shogi8017.app.services.logics.pieces.Lance.directions
 import com.shogi8017.app.services.logics.utils.Multiset
-import com.shogi8017.app.services.logics.{Board, Direction, DropAction, Player, Position}
+import com.shogi8017.app.services.logics.*
 
 case class Pawn(owner: Player) extends Piece with UnitMovingPieceMethods with DroppablePiece with PromotablePiece {
   def pieceType: PieceType = {
@@ -14,10 +11,10 @@ case class Pawn(owner: Player) extends Piece with UnitMovingPieceMethods with Dr
   def unitDirections: List[Direction] = Lance.directions(this.owner)
 
   override def additionalDropValidation(board: Board, drop: DropAction): Boolean = {
-    lazy val pieceWithNoMoves = drop.position.y != Pawn.undroppableRank(this.owner)
+    lazy val pieceWithNoMovesValidation = drop.position.y != Pawn.undroppableRank(this.owner)
 
-    lazy val twoPawns = (1 to 9).exists(y =>
-      board.piecesMap.get(drop.position).exists(p =>
+    lazy val twoPawnsValidation = !(1 to 9).exists(y =>
+      board.piecesMap.get(Position(drop.position.x, y)).exists(p =>
         p.pieceType == PromotablePieceType.PAWN && p.owner == this.owner
       )
     )
@@ -25,12 +22,12 @@ case class Pawn(owner: Player) extends Piece with UnitMovingPieceMethods with Dr
     lazy val tempBoard = board.copy(
       piecesMap = board.piecesMap + (drop.position -> this),
       hands = board.hands.updated(this.owner, board.hands.getOrElse(this.owner, Multiset.empty) - this.pieceType),
-      lastAction = board.lastAction
+      lastAction = Some(Action(this.owner))
     )
 
-    lazy val dropPawnMate = Board.isCheckmated(tempBoard, Player.opponent(this.owner))
+    val dropPawnMateValidation = !Board.isCheckmated(tempBoard, Player.opponent(this.owner))
 
-    pieceWithNoMoves || twoPawns || dropPawnMate
+    pieceWithNoMovesValidation && twoPawnsValidation && dropPawnMateValidation
   }
   
   override def forcedPromotionRanks: Option[List[Int]] = Some(Pawn.forcedPromotionRanks(this.owner))

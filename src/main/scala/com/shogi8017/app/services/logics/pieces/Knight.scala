@@ -1,8 +1,6 @@
 package com.shogi8017.app.services.logics.pieces
 
-import cats.data.Validated
-import com.shogi8017.app.errors.ActionValidationError
-import com.shogi8017.app.services.logics.{Board, Direction, DropAction, Player, Position}
+import com.shogi8017.app.services.logics.{Board, Direction, DropAction, Player}
 
 case class Knight(owner: Player) extends Piece with UnitMovingPieceMethods with DroppablePiece with PromotablePiece {
   def pieceType: PieceType = {
@@ -12,7 +10,7 @@ case class Knight(owner: Player) extends Piece with UnitMovingPieceMethods with 
   def unitDirections: List[Direction] = Knight.directions(this.owner)
 
   override def additionalDropValidation(board: Board, drop: DropAction): Boolean = {
-    Knight.undroppableRanks(this.owner).contains(drop.position.y)
+    !Knight.undroppableRanks(this.owner).contains(drop.position.y)
   }
 
   override def forcedPromotionRanks: Option[List[Int]] = Some(Knight.forcedPromotionRanks(this.owner))

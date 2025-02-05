@@ -74,20 +74,35 @@ object Board {
     }
   }
 
-  def executeMove(board: Board, player: Player, playerAction: MoveAction): Validated[GameValidationError, MoveResult] = {
+  def executeMove(board: Board, player: Player, playerAction: PlayerAction): Validated[GameValidationError, MoveResult] = {
 
     def validateGameState(player: Player): Validated[GameValidationError, Unit] = {
       Validated.cond(getKingPosition(board, player).nonEmpty, (), NoKingError)
     }
 
-    def validatePlayerAction(player: Player, playerAction: MoveAction): Validated[ActionValidationError, Unit] = {
-      val (from, to) = playerAction.getFromToPositions
+    def validatePlayerAction(player: Player, playerAction: PlayerAction): Validated[ActionValidationError, Unit] = {
 
-      val errors = List(
-        if (isOutOfTurn(board.lastAction, player)) Some(OutOfTurn) else None,
-        if (from == to) Some(NoMove) else None,
-        if (to.isOutOfBoard) Some(OutOfBoard) else None
-      ).flatten
+      val errors: List[ActionValidationError] = {
+        val commonErrors = List(
+          Option.when(isOutOfTurn(board.lastAction, player))(OutOfTurn)
+        )
+
+        val specificErrors = playerAction match {
+          case moveAction: MoveAction =>
+            val (from, to) = moveAction.getFromToPositions
+            List(
+              Option.when(from == to)(NoMove),
+              Option.when(to.isOutOfBoard)(OutOfBoard)
+            )
+
+          case dropAction: DropAction =>
+            List(Option.when(dropAction.position.isOutOfBoard)(OutOfBoard))
+
+          case _ => List(Some(UnknownAction))
+        }
+
+        (commonErrors ++ specificErrors).flatten
+      }
 
       errors.headOption match {
         case Some(error) => Invalid(error)
@@ -95,14 +110,24 @@ object Board {
       }
     }
 
-    def validatePieceExistenceAndOwnership(from: Position, owner: Player): Validated[ActionValidationError, Piece] = {
-      Validated.cond(isOccupied(board, from), board.piecesMap(from), UnoccupiedPosition)
-        .andThen { piece =>
-          Validated.cond(piece.owner == owner, piece, NotOwnerOfPiece)
-        }
+    def validatePieceExistenceAndOwnership(player: Player, playerAction: PlayerAction): Validated[ActionValidationError, Piece] = {
+      playerAction match
+        case moveAction: MoveAction =>
+          val from = moveAction.from
+          Validated.cond(isOccupied(board, from), board.piecesMap(from), UnoccupiedPosition)
+            .andThen { piece =>
+              Validated.cond(piece.owner == player, piece, NotOwnerOfPiece)
+            }
+        case dropAction: DropAction =>
+          Validated.cond(isPlayerHandContains(board, player, dropAction.pieceType), getPieceByPieceType(dropAction.pieceType, player), NoPieceInHand)
+            .andThen { piece =>
+              Validated.cond(!isOccupied(board, dropAction.position), piece, OccupiedDrop)
+            }.andThen { piece =>
+              Validated.cond(piece.isInstanceOf[DroppablePiece], piece, InvalidDropPiece)
+            }
     }
 
-    def processMove(board: Board, player: Player, playerAction: MoveAction)(piece: Piece): (Piece, Validated[GameValidationError, BoardStateTransition]) = {
+    def processMove(board: Board, player: Player, playerAction: PlayerAction)(piece: Piece): (Piece, Validated[GameValidationError, BoardStateTransition]) = {
       (piece, validateAndApplyAction(piece, board, playerAction))
     }
 
@@ -138,7 +163,7 @@ object Board {
 
     validateGameState(player)
       .andThen(_ => validatePlayerAction(player, playerAction))
-      .andThen(_ => validatePieceExistenceAndOwnership(playerAction.from, player))
+      .andThen(_ => validatePieceExistenceAndOwnership(player, playerAction))
       .andThen(processGameEvent compose processMove(board, player, playerAction))
   }
 
@@ -191,8 +216,6 @@ object Board {
 
   def isChecked(board: Board, player: Player): Boolean = {
     val kingPosition = getKingPosition(board, player)
-    // TODO: remove k
-    val k = kingPosition.exists(_.isUnderAttack(board, player))
     kingPosition.exists(_.isUnderAttack(board, player))
   }
 
@@ -222,6 +245,7 @@ object Board {
             lastAction = Some(Action(player))
           )
 
+          val k = !isChecked(tempBoard, player)
           !isChecked(tempBoard, player)
         }
       case _ => false

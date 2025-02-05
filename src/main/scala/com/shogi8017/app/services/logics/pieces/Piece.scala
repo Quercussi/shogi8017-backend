@@ -29,8 +29,6 @@ trait Piece() {
       piecesMap = board.piecesMap - from + (to -> board.piecesMap(from))
     )
 
-    // TODO: remove k
-    val k = isChecked(tempBoard, this.owner)
     isChecked(tempBoard, this.owner)
   }
 

@@ -12,13 +12,18 @@ object LogicTestUtils {
       col <- 1 to 9
     } yield Position(row, col)
   }
-  
-  def testMove(player: Player, playerAction: MoveAction, expectedPiece: Piece, board: Board = Board.defaultInitialPosition): Board = {
+
+  def testAction(player: Player, playerAction: PlayerAction, expectedPiece: Piece, board: Board = Board.defaultInitialPosition): Board = {
     val result = executeMove(board, player, playerAction)
 
     result match {
       case Valid((newBoard, _, _, _)) =>
-        assert(newBoard.piecesMap.get(playerAction.to).contains(expectedPiece))
+        val targetPosition = playerAction match {
+          case DropAction(position, _) => position
+          case MoveAction(_, to, _)   => to
+        }
+
+        assert(newBoard.piecesMap.get(targetPosition).contains(expectedPiece))
         newBoard
       case invalid =>
         println(s"Move failed with result: $invalid")
@@ -27,7 +32,7 @@ object LogicTestUtils {
     }
   }
 
-  def testMoveError(player: Player, playerAction: MoveAction, expectedException: Exception, board: Board = Board.defaultInitialPosition): Unit = {
+  def testActionError(player: Player, playerAction: PlayerAction, expectedException: Exception, board: Board = Board.defaultInitialPosition): Unit = {
     val result = executeMove(board, player, playerAction)
 
     result match {
