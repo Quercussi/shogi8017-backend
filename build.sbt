@@ -5,7 +5,7 @@ addCommandAlias("run-db-migrations", "runMigrate")
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-ThisBuild / scalaVersion := "3.5.2"
+ThisBuild / scalaVersion := "3.6.3"
 
 val http4sVersion = "0.23.30"
 val jwtHttp4sVersion = "2.0.2"
@@ -43,7 +43,7 @@ libraryDependencies ++= Seq(
   "dev.profunktor" %% "redis4cats-effects" % redis4catsVersion,
   "dev.profunktor" %% "redis4cats-streams" % redis4catsVersion,
 
-  "dev.profunktor" %% "fs2-rabbit-circe" % "5.3.0",
+  "dev.profunktor" %% "fs2-rabbit-circe" % "5.4.0",
 
   "ch.qos.logback" % "logback-classic" % "1.5.16",
 
