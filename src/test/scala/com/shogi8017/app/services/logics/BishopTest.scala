@@ -3,7 +3,9 @@ package com.shogi8017.app.services.logics
 import com.shogi8017.app.errors.{IllegalMove, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
-import com.shogi8017.app.services.logics.pieces.{Knight, PromotedBishop, Bishop}
+import com.shogi8017.app.services.logics.pieces.PromotablePieceType.BISHOP
+import com.shogi8017.app.services.logics.pieces.{Bishop, Knight, PromotedBishop}
+import com.shogi8017.app.services.logics.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class BishopTest extends AnyFunSuite:
@@ -72,9 +74,14 @@ class BishopTest extends AnyFunSuite:
     val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
 
     val r1 = testMove(WHITE_PLAYER, MoveAction(Position(4, 4), Position(7, 7)), Bishop(WHITE_PLAYER), s0)
-    val r2 = testMove(BLACK_PLAYER, MoveAction(Position(7, 7), Position(4, 4)), Bishop(BLACK_PLAYER), s1)
     assert(r1.piecesMap.size == 3)
+    assert(r1.hands.get(WHITE_PLAYER).contains(Multiset(BISHOP)))
+    assert(r1.hands.get(BLACK_PLAYER).contains(Multiset.empty))
+    
+    val r2 = testMove(BLACK_PLAYER, MoveAction(Position(7, 7), Position(4, 4)), Bishop(BLACK_PLAYER), s1)
     assert(r2.piecesMap.size == 3)
+    assert(r2.hands.get(BLACK_PLAYER).contains(Multiset(BISHOP)))
+    assert(r2.hands.get(WHITE_PLAYER).contains(Multiset.empty))
   }
 
   test("A Bishop should not capture a piece of its own side") {
