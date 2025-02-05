@@ -245,7 +245,6 @@ object Board {
             lastAction = Some(Action(player))
           )
 
-          val k = !isChecked(tempBoard, player)
           !isChecked(tempBoard, player)
         }
       case _ => false

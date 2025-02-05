@@ -4,7 +4,7 @@ import com.shogi8017.app.errors.{IllegalMove, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.ROOK
-import com.shogi8017.app.services.logics.pieces.{Knight, PromotedRook, Rook, Silver}
+import com.shogi8017.app.services.logics.pieces.{Knight, PromotedRook, Rook}
 import com.shogi8017.app.services.logics.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 

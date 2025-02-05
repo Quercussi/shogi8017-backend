@@ -1,10 +1,16 @@
 package com.shogi8017.app.services.logics
 
+import cats.data.Validated.Valid
+import com.shogi8017.app.errors.{IllegalMove, NotOwnerOfPiece, OutOfTurn}
+import com.shogi8017.app.services.logics.Board.executeMove
+import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE}
+import com.shogi8017.app.services.logics.LogicTestUtils.{testAction, testActionError}
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
 import com.shogi8017.app.services.logics.pieces.*
 import com.shogi8017.app.services.logics.pieces.PieceType.*
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.*
 import com.shogi8017.app.services.logics.pieces.UnPromotablePieceType.*
+import com.shogi8017.app.services.logics.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class BoardTest extends AnyFunSuite {
@@ -29,11 +35,41 @@ class BoardTest extends AnyFunSuite {
   test("emptyPosition should initialize the empty board correctly") {
     val board = Board.emptyBoard
 
-    assert(board.piecesMap.get(Position(5, 1)).contains(King(WHITE_PLAYER)))
-    assert(board.piecesMap.get(Position(5, 9)).contains(King(BLACK_PLAYER)))
+    assert(board.piecesMap == Map(
+      Position(5,1) -> King(WHITE_PLAYER),
+      Position(5,9) -> King(BLACK_PLAYER)
+    ))
   }
 
-//  test("board should recognize a stalemate") {
+  test("A player should not be able to control opponent's pieces") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Board.emptyBoard.piecesMap ++ Map(
+        Position(5, 3) -> Rook(WHITE_PLAYER),
+        Position(1, 8) -> Rook(BLACK_PLAYER),
+      ),
+    )
+
+    testActionError(WHITE_PLAYER, MoveAction(Position(1, 8), Position(2, 8)), NotOwnerOfPiece, s0)
+  }
+
+  test("A player should not be able to move when it's not their turn") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Board.emptyBoard.piecesMap ++ Map(
+        Position(1, 3) -> Rook(WHITE_PLAYER),
+        Position(1, 8) -> Rook(BLACK_PLAYER),
+      ),
+      hands = Map(WHITE_PLAYER -> Multiset(PAWN), BLACK_PLAYER -> Multiset(PAWN)),
+      lastAction = Some(Action(WHITE_PLAYER))
+    )
+    val s1 = s0.copy(lastAction = Some(Action(BLACK_PLAYER)))
+
+    testActionError(WHITE_PLAYER, MoveAction(Position(1, 3), Position(1, 7)), OutOfTurn, s0)
+    testActionError(WHITE_PLAYER, DropAction(Position(1, 7), PAWN), OutOfTurn, s0)
+    testActionError(BLACK_PLAYER, MoveAction(Position(1, 8), Position(8, 8)), OutOfTurn, s1)
+    testActionError(BLACK_PLAYER, DropAction(Position(8, 8), PAWN), OutOfTurn, s1)
+  }
+
+  //  test("board should recognize a stalemate") {
 //    val board = Board.emptyBoard
 //    val newPieces = board.piecesMap
 //      - Position(5,1)
@@ -114,166 +150,155 @@ class BoardTest extends AnyFunSuite {
 //      case _ => fail("Move should be valid")
 //    }
 //  }
-//
-//  test("board should recognize a check") {
-//    val board = Board.emptyBoard
-//    val newPieces = board.piecesMap
-//      - Position(5, 1)
-//      + (Position(1, 2) -> King(WHITE_PLAYER))
-//      + (Position(3,4) -> Pawn(WHITE_PLAYER))
-//      + (Position(2, 8) -> Rook(BLACK_PLAYER))
-//      + (Position(8, 8) -> Rook(BLACK_PLAYER))
-//
-//    val board0 = Board(newPieces)
-//    val board1 = testMove(WHITE_PLAYER, MoveAction(Position(1, 2), Position(1, 1), None), King(WHITE_PLAYER, true), board0)
-//
-//    executeMove(board1, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1), None)) match {
-//      case Valid((_, _, _, gameEvent)) =>
-//        gameEvent match {
-//          case Some(CHECK) => ()
-//          case None => fail("There should be a game event")
-//          case Some(e) => fail(s"Incorrect game event: $e")
-//        }
-//      case _ => fail("Move should be valid")
-//    }
-//  }
-//
-//  test("Board should recognize a checkmate") {
-//    val board = Board.emptyBoard
-//    val newPieces = board.piecesMap
-//      - Position(5,1)
-//      + (Position(1,1) -> King(WHITE_PLAYER))
-//      + (Position(3,4) -> Pawn(WHITE_PLAYER))
-//      + (Position(2,8) -> Rook(BLACK_PLAYER))
-//      + (Position(7,2) -> Rook(BLACK_PLAYER))
-//      + (Position(8,8) -> Rook(BLACK_PLAYER))
-//
-//    //  a b c d e f g h
-//    //8 . r . . K . . r
-//    //7 . . . . . . . .
-//    //6 . . . . . . . .
-//    //5 . . . . . . . .
-//    //4 . . P . . . . .
-//    //3 . . . . . . . .
-//    //2 . . . . . . r .
-//    //1 K . . . . . . .
-//
-//    val board0 = Board(newPieces, Some(Action(WHITE_PLAYER, Position(2, 1), Position(1, 1), King(WHITE_PLAYER, true), None)))
-//
-//    executeMove(board0, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1), None)) match {
-//      case Valid((_, _, _, gameEvent)) =>
-//        gameEvent match {
-//          case Some(CHECKMATE) => ()
-//          case None => fail("There should be a game event")
-//          case Some(e) => fail(s"Incorrect game event: $e")
-//        }
-//      case _ => fail("Move should be valid")
-//    }
-//  }
-//
-//  test("A player should not move that check themself") {
-//    val emptyBoard = Board.emptyBoard
-//    val newPieces = emptyBoard.piecesMap
-//      + (Position(6, 8) -> Rook(WHITE_PLAYER, true))
-//      + (Position(8, 8) -> Rook(BLACK_PLAYER, true))
-//
-//    testMoveError(WHITE_PLAYER, MoveAction(Position(8, 8), Position(8, 7), None), IllegalMove, Board(newPieces))
-//  }
-//
-//  test("False-Checkmate test 1") {
-//    val emptyBoard = Board.emptyBoard
-//    val newPieces = emptyBoard.piecesMap
-//      -  Position(5, 1)
-//      + (Position(1, 1) -> King(WHITE_PLAYER))
-//      + (Position(2, 7) -> Rook(WHITE_PLAYER))
-//      + (Position(7, 1) -> Rook(BLACK_PLAYER))
-//      + (Position(8, 8) -> Rook(BLACK_PLAYER))
-//
-//      //a b c d e f g h
-//      //8 . . . k . . . r
-//      //7 . R . . . . . .
-//      //6 . . . . . . . .
-//      //5 . . . . . . . .
-//      //4 . . . . . . . .
-//      //3 . . . . . . . .
-//      //2 . . . . . . . .
-//      //1 K . . . . . r .
-//
-//    val board0 = Board(newPieces, Some(Action(WHITE_PLAYER, Position(2, 1), Position(1, 1), King(WHITE_PLAYER, true), None)))
-//    executeMove(board0, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1), None)) match {
-//      case Valid((board1, _, _, gameEvent)) =>
-//        gameEvent match {
-//          case Some(CHECK) => testMove(WHITE_PLAYER, MoveAction(Position(2, 7), Position(2, 1), None), Rook(WHITE_PLAYER, true), board1)
-//          case None => fail("There should be a game event")
-//          case Some(e) => fail(s"Incorrect game event: $e")
-//        }
-//      case _ => fail("Move should be valid")
-//    }
-//  }
-//
-//  test("False-Checkmate test 2") {
-//    val emptyBoard = Board.emptyBoard
-//    val newPieces = emptyBoard.piecesMap
-//      - Position(5, 1)
-//      + (Position(1, 1) -> King(WHITE_PLAYER))
-//      + (Position(3, 3) -> Knight(WHITE_PLAYER))
-//      + (Position(7, 1) -> Rook(BLACK_PLAYER))
-//      + (Position(8, 8) -> Rook(BLACK_PLAYER))
-//
-//    //a b c d e f g h
-//    //8 . . . k . . . r
-//    //7 . . . . . . . .
-//    //6 . . . . . . . .
-//    //5 . . . . . . . .
-//    //4 . . . . . . . .
-//    //3 . . N . . . . .
-//    //2 . . . . . . . .
-//    //1 K . . . . . r .
-//
-//    val board0 = Board(newPieces, Some(Action(WHITE_PLAYER, Position(2, 1), Position(1, 1), King(WHITE_PLAYER, true), None)))
-//    executeMove(board0, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1), None)) match {
-//      case Valid((board1, _, _, gameEvent)) =>
-//        gameEvent match {
-//          case Some(CHECK) => testMove(WHITE_PLAYER, MoveAction(Position(3, 3), Position(2, 1), None), Knight(WHITE_PLAYER, true), board1)
-//          case None => fail("There should be a game event")
-//          case Some(e) => fail(s"Incorrect game event: $e")
-//        }
-//      case _ => fail("Move should be valid")
-//    }
-//  }
-//
-//  test("False-Checkmate test 3") {
-//    val emptyBoard = Board.emptyBoard
-//    val newPieces = emptyBoard.piecesMap
-//      - Position(5, 1)
-//      - Position(5, 8)
-//      + (Position(1, 8) -> King(WHITE_PLAYER))
-//      + (Position(1, 1) -> King(BLACK_PLAYER))
-//      + (Position(2, 7) -> Pawn(WHITE_PLAYER))
-//      + (Position(7, 7) -> Rook(BLACK_PLAYER))
-//      + (Position(8, 7) -> Rook(BLACK_PLAYER))
-//
-//    //a b c d e f g h
-//    //8 K . . . . . . .
-//    //7 . P . . . . r r
-//    //6 . . . . . . . .
-//    //5 . . . . . . . .
-//    //4 . . . . . . . .
-//    //3 . . . . . . . .
-//    //2 . . . . . . . .
-//    //1 k . . . . . . .
-//
-//    val board0 = Board(newPieces, Some(Action(WHITE_PLAYER, Position(1, 7), Position(1, 8), King(WHITE_PLAYER, true), None)))
-//    executeMove(board0, BLACK_PLAYER, MoveAction(Position(8, 7), Position(8, 8), None)) match {
-//      case Valid((board1, _, _, gameEvent)) =>
-//        gameEvent match {
-//          case Some(CHECK) => testMove(WHITE_PLAYER, MoveAction(Position(2, 7), Position(2, 8), Some(Queen(WHITE_PLAYER, true))), Queen(WHITE_PLAYER, true), board1)
-//          case None => fail("There should be a game event")
-//          case Some(e) => fail(s"Incorrect game event: $e")
-//        }
-//      case _ => fail("Move should be valid")
-//    }
-//  }
+
+  test("Board should recognize a checkmate") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(1,1) -> King(WHITE_PLAYER),
+        Position(3,4) -> Pawn(WHITE_PLAYER),
+        Position(5,9) -> King(BLACK_PLAYER),
+        Position(2,8) -> Rook(BLACK_PLAYER),
+        Position(7,2) -> Rook(BLACK_PLAYER),
+        Position(8,8) -> Rook(BLACK_PLAYER)
+      ),
+      lastAction = Some(Action(WHITE_PLAYER))
+    )
+
+    //  a b c d e f g h i
+    //9 . . . . K . . . .
+    //8 . r . . . . . r .
+    //7 . . . . . . . . .
+    //6 . . . . . . . . .
+    //5 . . . . . . . . .
+    //4 . . P . . . . . .
+    //3 . . . . . . . . .
+    //2 . . . . . . r . .
+    //1 K . . . . . . . .
+
+    executeMove(s0, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1))) match {
+      case Valid((_, _, _, gameEvent)) =>
+        gameEvent match {
+          case Some(CHECKMATE) => ()
+          case None => fail("There should be a game event")
+          case Some(e) => fail(s"Incorrect game event: $e")
+        }
+      case _ => fail("Move should be valid")
+    }
+  }
+
+  test("A player should not move that check themself") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Board.emptyBoard.piecesMap ++ Map(
+        Position(5,3) -> Rook(WHITE_PLAYER),
+        Position(5,8) -> Rook(BLACK_PLAYER),
+      ),
+    )
+
+    testActionError(WHITE_PLAYER, MoveAction(Position(5, 3), Position(4, 3)), IllegalMove, s0)
+  }
+
+  test("False-Checkmate test 1") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(1,1) -> King(WHITE_PLAYER),
+        Position(5,9) -> King(BLACK_PLAYER),
+        Position(2,7) -> Rook(WHITE_PLAYER),
+        Position(7,2) -> Rook(BLACK_PLAYER),
+        Position(8,8) -> Rook(BLACK_PLAYER),
+      ),
+      lastAction = Some(Action(WHITE_PLAYER))
+    )
+
+    //  a b c d e f g h i
+    //9 . . . . K . . . .
+    //8 . . . . . . . r .
+    //7 . R . . . . . . .
+    //6 . . . . . . . . .
+    //5 . . . . . . . . .
+    //4 . . P . . . . . .
+    //3 . . . . . . . . .
+    //2 . . . . . . r . .
+    //1 K . . . . . . . .
+
+    executeMove(s0, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1))) match {
+      case Valid((s1, _, _, gameEvent)) =>
+        gameEvent match {
+          case Some(CHECK) => testAction(WHITE_PLAYER, MoveAction(Position(2, 7), Position(2, 1)), Rook(WHITE_PLAYER), s1)
+          case None => fail("There should be a game event")
+          case Some(e) => fail(s"Incorrect game event: $e")
+        }
+      case _ => fail("Move should be valid")
+    }
+  }
+
+  test("False-Checkmate test 2") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(1,1) -> King(WHITE_PLAYER),
+        Position(5,9) -> King(BLACK_PLAYER),
+        Position(9,2) -> Bishop(WHITE_PLAYER),
+        Position(7,2) -> Rook(BLACK_PLAYER),
+        Position(8,6) -> Rook(BLACK_PLAYER),
+      ),
+      lastAction = Some(Action(WHITE_PLAYER))
+    )
+
+    //  a b c d e f g h i
+    //9 . . . . K . . . .
+    //8 . . . . . . . . .
+    //7 . . . . . . . . .
+    //6 . . . . . . . r .
+    //5 . . . . . . . . .
+    //4 . . P . . . . . .
+    //3 . . . . . . . . .
+    //2 . . . . . . r . B
+    //1 K . . . . . . . .
+
+    executeMove(s0, BLACK_PLAYER, MoveAction(Position(8, 6), Position(8, 1))) match {
+      case Valid((s1, _, _, gameEvent)) =>
+        gameEvent match {
+          case Some(CHECK) => testAction(WHITE_PLAYER, MoveAction(Position(9, 2), Position(8, 1)), Bishop(WHITE_PLAYER), s1)
+          case None => fail("There should be a game event")
+          case Some(e) => fail(s"Incorrect game event: $e")
+        }
+      case _ => fail("Move should be valid")
+    }
+  }
+
+  test("False-Checkmate test 3") {
+    val s0 = Board.emptyBoard.copy(
+      piecesMap = Map(
+        Position(1,1) -> King(WHITE_PLAYER),
+        Position(5,9) -> King(BLACK_PLAYER),
+        Position(7,2) -> Rook(BLACK_PLAYER),
+        Position(8,6) -> Rook(BLACK_PLAYER),
+      ),
+      hands = Map(WHITE_PLAYER -> Multiset(KNIGHT), BLACK_PLAYER -> Multiset.empty),
+      lastAction = Some(Action(WHITE_PLAYER))
+    )
+
+    //  a b c d e f g h i
+    //9 . . . . K . . . .
+    //8 . . . . . . . . .
+    //7 . . . . . . . . .
+    //6 . . . . . . . r .
+    //5 . . . . . . . . .
+    //4 . . P . . . . . .
+    //3 . . . . . . . . .
+    //2 . . . . . . r . .
+    //1 K . . . . . . . .
+
+    executeMove(s0, BLACK_PLAYER, MoveAction(Position(8, 6), Position(8, 1))) match {
+      case Valid((s1, _, _, gameEvent)) =>
+        gameEvent match {
+          case Some(CHECK) => testAction(WHITE_PLAYER, DropAction(Position(2, 1), KNIGHT), Knight(WHITE_PLAYER), s1)
+          case None => fail("There should be a game event")
+          case Some(e) => fail(s"Incorrect game event: $e")
+        }
+      case _ => fail("Move should be valid")
+    }
+  }
+
 //
 //  test("Actual chess game test 1") {
 //    // Anderssen vs. Kieseritzky (1851)
