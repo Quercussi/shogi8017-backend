@@ -3,6 +3,7 @@ package com.shogi8017.app.services.logics
 import cats.data.Validated.Valid
 import com.shogi8017.app.errors.{IllegalMove, NotOwnerOfPiece, OutOfTurn}
 import com.shogi8017.app.services.logics.Board.executeMove
+import com.shogi8017.app.exceptions.{IllegalMove, NotOwnerOfPiece, OutOfTurn}
 import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE}
 import com.shogi8017.app.services.logics.LogicTestUtils.{testAction, testActionError}
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
@@ -10,7 +11,7 @@ import com.shogi8017.app.services.logics.pieces.*
 import com.shogi8017.app.services.logics.pieces.PieceType.*
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.*
 import com.shogi8017.app.services.logics.pieces.UnPromotablePieceType.*
-import com.shogi8017.app.services.logics.utils.Multiset
+import com.shogi8017.app.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class BoardTest extends AnyFunSuite {

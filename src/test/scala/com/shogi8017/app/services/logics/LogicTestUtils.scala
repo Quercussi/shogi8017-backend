@@ -14,7 +14,7 @@ object LogicTestUtils {
   }
 
   def testAction(player: Player, playerAction: PlayerAction, expectedPiece: Piece, board: Board = Board.defaultInitialPosition): Board = {
-    val result = executeMove(board, player, playerAction)
+    val result = executeAction(board, player, playerAction)
 
     result match {
       case Valid((newBoard, _, _, _)) =>
@@ -33,7 +33,7 @@ object LogicTestUtils {
   }
 
   def testActionError(player: Player, playerAction: PlayerAction, expectedException: Exception, board: Board = Board.defaultInitialPosition): Unit = {
-    val result = executeMove(board, player, playerAction)
+    val result = executeAction(board, player, playerAction)
 
     result match {
       case Valid(moveResult) =>

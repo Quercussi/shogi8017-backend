@@ -1,7 +1,7 @@
 package com.shogi8017.app.services.logics.pieces
 
-import com.shogi8017.app.services.logics.utils.Multiset
 import com.shogi8017.app.services.logics.*
+import com.shogi8017.app.utils.Multiset
 
 case class Pawn(owner: Player) extends Piece with UnitMovingPieceMethods with DroppablePiece with PromotablePiece {
   def pieceType: PieceType = {

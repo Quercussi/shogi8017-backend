@@ -10,7 +10,7 @@ import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
 import com.shogi8017.app.services.logics.pieces.*
 import com.shogi8017.app.services.logics.pieces.Piece.validateAndApplyAction
 import com.shogi8017.app.services.logics.pieces.PieceType.getPieceByPieceType
-import com.shogi8017.app.services.logics.utils.Multiset
+import com.shogi8017.app.utils.Multiset
 
 type MoveResult = (Board, StateTransitionList, AlgebraicNotation, Option[GameEvent])
 type BoardStateTransition = (Board, StateTransitionList, AlgebraicNotation)

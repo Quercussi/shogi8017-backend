@@ -1,11 +1,11 @@
 package com.shogi8017.app.services.logics
 
-import com.shogi8017.app.errors.{ExpectingPromotion, IllegalDrop, IllegalMove, IncorrectPromotionScenario}
+import com.shogi8017.app.exceptions.{ExpectingPromotion, IllegalDrop, IllegalMove, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.{LANCE, PAWN}
 import com.shogi8017.app.services.logics.pieces.{Bishop, Gold, King, Lance, Pawn, PromotedPawn, Rook}
-import com.shogi8017.app.services.logics.utils.Multiset
+import com.shogi8017.app.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class PawnTest extends AnyFunSuite:

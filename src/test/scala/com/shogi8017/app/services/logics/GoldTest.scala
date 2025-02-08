@@ -6,7 +6,7 @@ import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.{BISHOP, KNIGHT}
 import com.shogi8017.app.services.logics.pieces.UnPromotablePieceType.GOLD
 import com.shogi8017.app.services.logics.pieces.{Gold, Knight, PromotedBishop}
-import com.shogi8017.app.services.logics.utils.Multiset
+import com.shogi8017.app.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class GoldTest extends AnyFunSuite:

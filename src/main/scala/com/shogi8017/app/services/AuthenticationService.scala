@@ -2,7 +2,7 @@ package com.shogi8017.app.services
 
 import cats.effect.IO
 import com.shogi8017.app.JwtConfig
-import com.shogi8017.app.errors.IncorrectUsernameOrPassword
+import com.shogi8017.app.exceptions.IncorrectUsernameOrPassword
 import com.shogi8017.app.jwtClaimModels.UserClaimModel
 import com.shogi8017.app.models.UserModel
 import com.shogi8017.app.repository.UserRepository

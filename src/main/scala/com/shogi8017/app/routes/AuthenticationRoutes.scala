@@ -2,7 +2,7 @@ package com.shogi8017.app.routes
 
 import cats.effect.IO
 import cats.syntax.applicative.*
-import com.shogi8017.app.errors.IncorrectUsernameOrPassword
+import com.shogi8017.app.exceptions.IncorrectUsernameOrPassword
 import com.shogi8017.app.models.UserModel
 import com.shogi8017.app.services.AuthenticationService
 import io.circe.generic.auto.*

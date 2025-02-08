@@ -1,4 +1,4 @@
-package com.shogi8017.app.services.logics.utils
+package com.shogi8017.app.utils
 
 import scala.annotation.targetName
 

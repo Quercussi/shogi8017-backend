@@ -6,7 +6,7 @@ import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.{BISHOP, LANCE}
 import com.shogi8017.app.services.logics.pieces.PromotedPieceType.P_LANCE
 import com.shogi8017.app.services.logics.pieces.{Knight, PromotedBishop, PromotedLance}
-import com.shogi8017.app.services.logics.utils.Multiset
+import com.shogi8017.app.utils.Multiset
 import org.scalatest.funsuite.AnyFunSuite
 
 class PromotedLanceTest extends AnyFunSuite:
