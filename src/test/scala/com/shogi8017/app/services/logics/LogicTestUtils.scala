@@ -1,7 +1,7 @@
 package com.shogi8017.app.services.logics
 
 import cats.data.Validated.{Invalid, Valid}
-import com.shogi8017.app.services.logics.Board.executeMove
+import com.shogi8017.app.services.logics.Board.executeAction
 import com.shogi8017.app.services.logics.pieces.Piece
 import org.scalatest.Assertions.fail
 

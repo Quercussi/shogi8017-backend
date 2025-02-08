@@ -1,0 +1,17 @@
+package com.shogi8017.app.exceptions
+
+sealed trait RequestValidationException extends AppException
+
+sealed trait AuthenticationException extends RequestValidationException
+case object UserNotFound extends AuthenticationException
+case object IncorrectUsernameOrPassword extends AuthenticationException
+case object InvalidProvidedCredentials extends AuthenticationException
+case object InvalidCredentials extends AuthenticationException
+
+sealed trait AuthorizationException extends RequestValidationException
+case object UserUnauthorized extends AuthorizationException
+
+sealed trait GameActionRequestException extends RequestValidationException
+case object UserNotInGame extends GameActionRequestException
+case object MissingWhitePlayer extends GameActionRequestException
+case object MissingBlackPlayer extends GameActionRequestException

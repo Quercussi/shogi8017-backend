@@ -1,15 +1,15 @@
 package com.shogi8017.app.services.logics.pieces
 
 import cats.data.Validated
-import com.shogi8017.app.errors.{ActionValidationError, CannotPromote, IllegalMove}
+import com.shogi8017.app.exceptions.{ActionValidationException, CannotPromote, IllegalMove}
 import com.shogi8017.app.services.logics.BoardAction.{ADD, HAND_ADD, REMOVE}
 import com.shogi8017.app.services.logics.{Board, BoardTransition, MoveAction, Player, Position, StateTransition}
 
 trait MovementValidationMethod extends Piece {
   def canMoveTo(board: Board, move: MoveAction): Boolean
 
-  def getBoardTransitionOnMove(board: Board, move: MoveAction): Validated[ActionValidationError, BoardTransition] = {
-    def validatePromotionAndApplyAction(piece: PromotablePiece, move: MoveAction): Validated[ActionValidationError, BoardTransition] = {
+  def getBoardTransitionOnMove(board: Board, move: MoveAction): Validated[ActionValidationException, BoardTransition] = {
+    def validatePromotionAndApplyAction(piece: PromotablePiece, move: MoveAction): Validated[ActionValidationException, BoardTransition] = {
       piece.validatePromotion(board, move) match {
         case None => Validated.valid(getActionListOnMove(board, move))
         case Some(e) => Validated.invalid(e)

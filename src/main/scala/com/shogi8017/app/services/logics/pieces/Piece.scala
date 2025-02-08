@@ -2,12 +2,12 @@ package com.shogi8017.app.services.logics.pieces
 
 import cats.data.{RWS, Validated}
 import cats.data.Validated.{Invalid, Valid}
-import com.shogi8017.app.errors.*
+import com.shogi8017.app.exceptions.*
 import com.shogi8017.app.services.*
 import com.shogi8017.app.services.logics.Board.*
 import com.shogi8017.app.services.logics.BoardAction.*
 import com.shogi8017.app.services.logics.pieces.{PieceType, PromotablePieceType}
-import com.shogi8017.app.services.logics.{pieces, *}
+import com.shogi8017.app.services.logics.*
 
 trait Piece() {
   val owner: Player
@@ -16,9 +16,9 @@ trait Piece() {
 
   def hasLegalMoves(board: Board, from: Position): Boolean
 
-  def getBoardTransitionOnMove(board: Board, move: MoveAction): Validated[ActionValidationError, BoardTransition]
+  def getBoardTransitionOnMove(board: Board, move: MoveAction): Validated[ActionValidationException, BoardTransition]
 
-  def getBoardTransitionOnDrop(board: Board, drop: DropAction): Validated[ActionValidationError, BoardTransition]
+  def getBoardTransitionOnDrop(board: Board, drop: DropAction): Validated[ActionValidationException, BoardTransition]
 
   def getAllPossibleMoves(board: Board, position: Position): Set[Position]
 
@@ -44,8 +44,8 @@ trait Piece() {
 }
 
 object Piece {
-  def validateAndApplyAction(piece: Piece, board: Board, action: PlayerAction): Validated[ActionValidationError, BoardStateTransition] = {
-    val validationFunction: PartialFunction[PlayerAction, Validated[ActionValidationError, BoardTransition]] = {
+  def validateAndApplyAction(piece: Piece, board: Board, action: PlayerAction): Validated[ActionValidationException, BoardStateTransition] = {
+    val validationFunction: PartialFunction[PlayerAction, Validated[ActionValidationException, BoardTransition]] = {
       case move: MoveAction if !piece.isSelfPin(board, move) =>
         piece.getBoardTransitionOnMove(board, move)
       case _: MoveAction =>
@@ -59,7 +59,7 @@ object Piece {
 
   private def applyBoardTransition(board: Board, player: Player)(
     stateTransition: BoardTransition
-  ): Validated[ActionValidationError, BoardStateTransition] = {
+  ): Validated[ActionValidationException, BoardStateTransition] = {
     val (transitions, algebraicNotation) = stateTransition
     val newBoard = processAction(board, player)(transitions)
 

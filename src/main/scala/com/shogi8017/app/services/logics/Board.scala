@@ -3,7 +3,7 @@ package com.shogi8017.app.services.logics
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all.*
-import com.shogi8017.app.errors.*
+import com.shogi8017.app.exceptions.*
 import com.shogi8017.app.services.*
 import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE, DEAD_POSITION, STALEMATE}
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
@@ -63,8 +63,8 @@ object Board {
     Map(Position(5,1) -> King(WHITE_PLAYER), Position(5,9) -> King(BLACK_PLAYER)),
   )
 
-  def fromMovesList(moveList: List[(Player, MoveAction)]): Validated[GameValidationError, Board] = {
-    moveList.foldLeft(Valid(Board.defaultInitialPosition): Validated[GameValidationError, Board]) { (validatedBoard, move) =>
+  def fromExecutionList(moveList: List[ExecutionAction]): Validated[GameValidationException, Board] = {
+    moveList.foldLeft(Valid(Board.defaultInitialPosition): Validated[GameValidationException, Board]) { (validatedBoard, move) =>
       validatedBoard.andThen { board =>
         val (player, playerAction) = move
         executeMove(board, player, playerAction).map {
@@ -76,13 +76,13 @@ object Board {
 
   def executeMove(board: Board, player: Player, playerAction: PlayerAction): Validated[GameValidationError, MoveResult] = {
 
-    def validateGameState(player: Player): Validated[GameValidationError, Unit] = {
-      Validated.cond(getKingPosition(board, player).nonEmpty, (), NoKingError)
+    def validateGameState(player: Player): Validated[GameValidationException, Unit] = {
+      Validated.cond(getKingPosition(board, player).nonEmpty, (), NoKingException$)
     }
 
-    def validatePlayerAction(player: Player, playerAction: PlayerAction): Validated[ActionValidationError, Unit] = {
+    def validatePlayerAction(player: Player, playerAction: PlayerAction): Validated[ActionValidationException, Unit] = {
 
-      val errors: List[ActionValidationError] = {
+      val errors: List[ActionValidationException] = {
         val commonErrors = List(
           Option.when(isOutOfTurn(board.lastAction, player))(OutOfTurn)
         )
@@ -110,7 +110,7 @@ object Board {
       }
     }
 
-    def validatePieceExistenceAndOwnership(player: Player, playerAction: PlayerAction): Validated[ActionValidationError, Piece] = {
+    def validatePieceExistenceAndOwnership(player: Player, playerAction: PlayerAction): Validated[ActionValidationException, Piece] = {
       playerAction match
         case moveAction: MoveAction =>
           val from = moveAction.from
@@ -131,7 +131,7 @@ object Board {
       (piece, validateAndApplyAction(piece, board, playerAction))
     }
 
-    def processGameEvent(inputTuple: (Piece, Validated[GameValidationError, BoardStateTransition])): Validated[GameValidationError, MoveResult] = {
+    def processGameEvent(inputTuple: (Piece, Validated[GameValidationException, BoardStateTransition])): Validated[GameValidationException, MoveResult] = {
       val (movingPiece, moveExecution) = inputTuple
       moveExecution.andThen { (board, stateTransitionList, algebraicNotation) =>
         val gameEvent = checkGameEvent(board, movingPiece.owner)

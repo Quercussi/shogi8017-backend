@@ -2,7 +2,7 @@ package com.shogi8017.app.services
 
 import cats.effect.IO
 import com.shogi8017.app.database.DatabaseResource
-import com.shogi8017.app.errors.IncorrectUsernameOrPassword
+import com.shogi8017.app.exceptions.IncorrectUsernameOrPassword
 import com.shogi8017.app.models.UserModel
 import com.shogi8017.app.repository.{CreateUserPayload, FindUserByUsernamePayload, UserRepository}
 import com.shogi8017.app.routes.{UserLoginPayload, UserSignUpPayload}

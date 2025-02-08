@@ -1,7 +1,7 @@
 package com.shogi8017.app.services.logics.pieces
 
 import cats.data.Validated
-import com.shogi8017.app.errors.{IllegalMove, ActionValidationError}
+import com.shogi8017.app.exceptions.{IllegalMove, ActionValidationException}
 import com.shogi8017.app.services.logics.{Board, BoardTransition, Direction, MoveAction, Position}
 
 trait RangedMovingPieceMethods extends RangedMovingPiece with MovementValidationMethod {

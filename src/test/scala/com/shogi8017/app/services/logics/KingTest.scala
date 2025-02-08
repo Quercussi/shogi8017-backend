@@ -1,6 +1,6 @@
 package com.shogi8017.app.services.logics
 
-import com.shogi8017.app.errors.{CannotPromote, IllegalMove, InvalidDropPiece}
+import com.shogi8017.app.exceptions.{CannotPromote, IllegalMove, InvalidDropPiece}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.KNIGHT

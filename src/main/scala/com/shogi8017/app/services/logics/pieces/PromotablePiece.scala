@@ -1,6 +1,6 @@
 package com.shogi8017.app.services.logics.pieces
 
-import com.shogi8017.app.errors.{ExpectingPromotion, IllegalPromotion, IncorrectPromotionScenario}
+import com.shogi8017.app.exceptions.{ExpectingPromotion, IllegalPromotion, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.{Board, MoveAction, Player}
 
 trait PromotablePiece extends Piece {

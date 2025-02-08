@@ -3,7 +3,7 @@ package com.shogi8017.app.services
 import cats.data.{State, Validated}
 import com.shogi8017.app.models.UserModel
 import com.shogi8017.app.services.logics.{Board, Player, MoveAction, Position}
-import com.shogi8017.app.errors.GameValidationError
+import com.shogi8017.app.exceptions.GameValidationException
 
 case class GameState(board: Board, turnPlayer: Player, playerMap: Map[Player, UserModel], isValid: Boolean)
 

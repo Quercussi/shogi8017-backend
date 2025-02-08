@@ -1,7 +1,7 @@
 package com.shogi8017.app.services.logics.pieces
 
 import cats.data.Validated
-import com.shogi8017.app.errors.{ActionValidationError, IllegalMove}
+import com.shogi8017.app.exceptions.{ActionValidationException, IllegalMove}
 import com.shogi8017.app.services.logics.pieces.Lance.directions
 import com.shogi8017.app.services.logics.{Board, Direction, DropAction, Player}
 
