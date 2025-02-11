@@ -5,6 +5,6 @@ import io.circe.generic.semiauto.deriveEncoder
 
 enum GameEvent:
   case CHECK, STALEMATE, DEAD_POSITION, CHECKMATE, RESIGNATION
-  
+
 object GameEvent:
-  implicit val gameEventEncoder: Encoder[GameEvent] = deriveEncoder
+  implicit val gameEventEncoder: Encoder[GameEvent] = Encoder.encodeString.contramap[GameEvent](_.toString)

@@ -18,7 +18,7 @@ object Player:
     case "BLACK_PLAYER" => Right(Player.BLACK_PLAYER)
     case other => Left(s"Unknown player: $other")
   }
-  
+
   implicit val playerPut: Put[Player] = Put[String].contramap(_.toString)
-  
-  implicit val playerEncoder: Encoder[Player] = deriveEncoder
+
+  implicit val playerEncoder: Encoder[Player] = Encoder.encodeString.contramap[Player](_.toString)

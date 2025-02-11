@@ -22,7 +22,7 @@ class BoardHistoryRepository(trx: Transactor[IO]) {
   def createBoardHistory(payload: CreateBoardHistoryPayload): IO[Either[Throwable, BoardHistoryModel]] = {
     val uuid = "test" // TODO: generate uuid;
     for {
-      result <-sql"""
+      result <- sql"""
         INSERT INTO boardHistories (
           boardId, actionNumber, actionType,
           fromX, fromY, toX, toY, dropType, toPromote, player
