@@ -119,11 +119,11 @@ class KnightTest extends AnyFunSuite:
     val emptyBoard = Board.emptyBoard
     val newPieces = emptyBoard.piecesMap
       + (Position(2, 6) -> Knight(WHITE_PLAYER))
-      + (Position(5, 4) -> Knight(BLACK_PLAYER))
+      + (Position(6, 4) -> Knight(BLACK_PLAYER))
     val board0 = Board(newPieces)
 
-    testActionError(BLACK_PLAYER, MoveAction(Position(5, 4), Position(4, 2), false), ExpectingPromotion, board0)
-    val board1 = testAction(BLACK_PLAYER, MoveAction(Position(5, 4), Position(4, 2), true), PromotedKnight(BLACK_PLAYER), board0)
+    testActionError(BLACK_PLAYER, MoveAction(Position(6, 4), Position(7, 2), false), ExpectingPromotion, board0)
+    val board1 = testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(7, 2), true), PromotedKnight(BLACK_PLAYER), board0)
 
     testActionError(WHITE_PLAYER, MoveAction(Position(2, 6), Position(1, 8), false), ExpectingPromotion, board1)
     testAction(WHITE_PLAYER, MoveAction(Position(2, 6), Position(1, 8), true), PromotedKnight(WHITE_PLAYER), board1)
