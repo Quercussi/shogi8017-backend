@@ -102,6 +102,13 @@ case class Multiset[T](elements: Map[T, Int]) {
   def toSet: Set[T] = elements.keySet
 
   /**
+   * Converts the multiset to a map of elements and their counts.
+   *
+   * @return a map where keys are elements and values are their respective counts
+   */
+  def toMap: Map[T, Int] = elements
+  
+  /**
    * Checks if this multiset is equal to another object.
    *
    * @param other the object to compare

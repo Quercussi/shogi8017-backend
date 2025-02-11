@@ -1,3 +1,3 @@
 package com.shogi8017.app.exceptions
 
-trait AppException
+trait AppException extends Exception

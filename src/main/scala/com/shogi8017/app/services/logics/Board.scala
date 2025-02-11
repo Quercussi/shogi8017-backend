@@ -4,29 +4,26 @@ import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.all.*
 import com.shogi8017.app.exceptions.*
+import com.shogi8017.app.models.UserModel
+import com.shogi8017.app.models.enumerators.GameWinner.{BLACK_WINNER, WHITE_WINNER}
+import com.shogi8017.app.models.enumerators.{GameState, GameWinner}
 import com.shogi8017.app.services.*
 import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE, DEAD_POSITION, STALEMATE}
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.actions.{DropAction, ExecutionAction, MoveAction, OnBoardAction, PlayerAction, ResignAction}
 import com.shogi8017.app.services.logics.pieces.*
 import com.shogi8017.app.services.logics.pieces.Piece.validateAndApplyAction
 import com.shogi8017.app.services.logics.pieces.PieceType.getPieceByPieceType
 import com.shogi8017.app.utils.Multiset
-
-type MoveResult = (Board, StateTransitionList, AlgebraicNotation, Option[GameEvent])
-type BoardStateTransition = (Board, StateTransitionList, AlgebraicNotation)
-type BoardTransition = (StateTransitionList, AlgebraicNotation)
-type StateTransitionList = List[StateTransition]
-type StateTransition = (BoardAction, Position, Player, PieceType)
-type AlgebraicNotation = String
-  
-enum BoardAction: 
-  case REMOVE, ADD, HAND_ADD, HAND_REMOVE
+import com.shogi8017.app.websocketPayloads.{BoardConfigurationEvent, PieceHandCount, PlayerList, PositionPiecePair}
 
 case class Board(
   piecesMap: Map[Position, Piece],
-  hands: Map[Player, Multiset[PieceType]] = Map(Player.WHITE_PLAYER -> Multiset.empty,
-          Player.BLACK_PLAYER -> Multiset.empty),
-  lastAction: Option[Action] = None
+  hands: Map[Player, Multiset[PieceType]] = Map(
+    Player.WHITE_PLAYER -> Multiset.empty,
+    Player.BLACK_PLAYER -> Multiset.empty
+  ),
+  auxiliaryState: BoardAuxiliaryState = BoardAuxiliaryState(None, None)
 )
 
 object Board {
@@ -66,28 +63,35 @@ object Board {
   def fromExecutionList(moveList: List[ExecutionAction]): Validated[GameValidationException, Board] = {
     moveList.foldLeft(Valid(Board.defaultInitialPosition): Validated[GameValidationException, Board]) { (validatedBoard, move) =>
       validatedBoard.andThen { board =>
-        val (player, playerAction) = move
-        executeMove(board, player, playerAction).map {
+        val (player, playerAction) = (move.player, move.playerAction)
+        executionAction(board, player, playerAction).map {
           case (newBoard, _, _, _) => newBoard
         }
       }
     }
   }
 
-  def executeMove(board: Board, player: Player, playerAction: PlayerAction): Validated[GameValidationError, MoveResult] = {
+  def executionAction(board: Board, player: Player, playerAction: PlayerAction): Validated[GameValidationException, MoveResult] = {
+    playerAction match
+      case onBoardAction: OnBoardAction => executeOnBoardAction(board, player, onBoardAction)
+      case resignAction: ResignAction => executeResignAction(board, player, resignAction)
+  }
+
+  def executeOnBoardAction(board: Board, player: Player, onBoardAction: OnBoardAction): Validated[GameValidationException, MoveResult] = {
 
     def validateGameState(player: Player): Validated[GameValidationException, Unit] = {
-      Validated.cond(getKingPosition(board, player).nonEmpty, (), NoKingException$)
+      Validated.cond(getKingPosition(board, player).nonEmpty, (), NoKingException)
+        .andThen(_ => Validated.cond(board.auxiliaryState.gameWinner.isEmpty, (), GameAlreadyEndedException))
     }
 
-    def validatePlayerAction(player: Player, playerAction: PlayerAction): Validated[ActionValidationException, Unit] = {
+    def validateOnBoardAction(player: Player, onBoardAction: OnBoardAction): Validated[ActionValidationException, Unit] = {
 
       val errors: List[ActionValidationException] = {
         val commonErrors = List(
-          Option.when(isOutOfTurn(board.lastAction, player))(OutOfTurn)
+          Option.when(isOutOfTurn(board.auxiliaryState.lastAction, player))(OutOfTurn)
         )
 
-        val specificErrors = playerAction match {
+        val specificErrors = onBoardAction match {
           case moveAction: MoveAction =>
             val (from, to) = moveAction.getFromToPositions
             List(
@@ -110,8 +114,8 @@ object Board {
       }
     }
 
-    def validatePieceExistenceAndOwnership(player: Player, playerAction: PlayerAction): Validated[ActionValidationException, Piece] = {
-      playerAction match
+    def validatePieceExistenceAndOwnership(player: Player, onBoardAction: OnBoardAction): Validated[ActionValidationException, Piece] = {
+      onBoardAction match
         case moveAction: MoveAction =>
           val from = moveAction.from
           Validated.cond(isOccupied(board, from), board.piecesMap(from), UnoccupiedPosition)
@@ -127,8 +131,8 @@ object Board {
             }
     }
 
-    def processMove(board: Board, player: Player, playerAction: PlayerAction)(piece: Piece): (Piece, Validated[GameValidationError, BoardStateTransition]) = {
-      (piece, validateAndApplyAction(piece, board, playerAction))
+    def processAction(board: Board, player: Player, onBoardAction: OnBoardAction)(piece: Piece): (Piece, Validated[ActionValidationException, BoardStateTransition]) = {
+      (piece, validateAndApplyAction(piece, board, onBoardAction))
     }
 
     def processGameEvent(inputTuple: (Piece, Validated[GameValidationException, BoardStateTransition])): Validated[GameValidationException, MoveResult] = {
@@ -161,13 +165,26 @@ object Board {
       }
     }
 
+    // TODO: handle resignation
+    
     validateGameState(player)
-      .andThen(_ => validatePlayerAction(player, playerAction))
-      .andThen(_ => validatePieceExistenceAndOwnership(player, playerAction))
-      .andThen(processGameEvent compose processMove(board, player, playerAction))
+      .andThen(_ => validateOnBoardAction(player, onBoardAction))
+      .andThen(_ => validatePieceExistenceAndOwnership(player, onBoardAction))
+      .andThen(processGameEvent compose processAction(board, player, onBoardAction))
   }
 
-  private def isOutOfTurn(lastAction: Option[Action], currentPlayer: Player): Boolean =
+  def executeResignAction(board: Board, player: Player, resignAction: ResignAction): Validated[GameValidationException, MoveResult] = {
+    val winner: GameWinner = if (player == WHITE_PLAYER) WHITE_WINNER else BLACK_WINNER
+    val gameEvent = Some(GameEvent.RESIGNATION)
+    val algebraicNotation = "1-0" // TODO: implement proper algebraic notation
+
+    val newBoard = board.copy(
+      auxiliaryState = board.auxiliaryState.copy(gameWinner = Some(winner))
+    )
+    Valid((board, List.empty, algebraicNotation, gameEvent))
+  }
+
+  private def isOutOfTurn(lastAction: Option[Actor], currentPlayer: Player): Boolean =
     lastAction match
       case None => currentPlayer == WHITE_PLAYER
       case Some(lastAction) => lastAction.player == currentPlayer
@@ -196,22 +213,23 @@ object Board {
 
   def processAction(board: Board, actingPlayer: Player)(stateTransitionList: StateTransitionList): Board = {
     val updatedBoard = stateTransitionList.foldLeft(board) { (acc, transition) =>
-      val (boardAction, position, player, pieceType) = transition
+      val (boardAction, position, player, pieceType) = (transition.boardAction, transition.position, transition.player, transition.piece)
       boardAction match {
-        case BoardAction.REMOVE =>
+        case BoardActionEnumerators.REMOVE =>
           acc.copy(piecesMap = acc.piecesMap - position)
-        case BoardAction.ADD =>
+        case BoardActionEnumerators.ADD =>
           val piece = PieceType.getPieceByPieceType(pieceType, player)
           acc.copy(piecesMap = acc.piecesMap + (position -> piece))
-        case BoardAction.HAND_ADD =>
+        case BoardActionEnumerators.HAND_ADD =>
           val updatedHand = acc.hands.getOrElse(player, Multiset.empty) + pieceType
           acc.copy(hands = acc.hands + (player -> updatedHand))
-        case BoardAction.HAND_REMOVE =>
+        case BoardActionEnumerators.HAND_REMOVE =>
           val updatedHand = acc.hands.getOrElse(player, Multiset.empty) - pieceType
           acc.copy(hands = acc.hands + (player -> updatedHand))
       }
     }
-    updatedBoard.copy(lastAction = Some(Action(actingPlayer)))
+    val newAuxiliaryState = board.auxiliaryState.copy(lastAction = Some(Actor(actingPlayer)))
+    updatedBoard.copy(auxiliaryState = newAuxiliaryState)
   }
 
   def isChecked(board: Board, player: Player): Boolean = {
@@ -226,10 +244,11 @@ object Board {
           case Some(p) if p.owner != player => board.hands.updated(player, board.hands(player) + p.pieceType)
           case _ => board.hands
         }
+        val updatedAuxiliaryState = board.auxiliaryState.copy(lastAction = Some(Actor(player)))
         val tempBoard = board.copy(
           piecesMap = board.piecesMap - position + (to -> piece),
           hands = updatedHands,
-          lastAction = Some(Action(player))
+          auxiliaryState = updatedAuxiliaryState
         )
 
         !isChecked(tempBoard, player)
@@ -239,10 +258,11 @@ object Board {
     lazy val dropEscape = existsPlayerHands(board, player) {
       case piece@(droppablePiece: DroppablePiece) =>
         droppablePiece.getAllPossibleDrops(board).exists { to =>
+          val updatedAuxiliaryState = board.auxiliaryState.copy(lastAction = Some(Actor(player)))
           val tempBoard = board.copy(
             piecesMap = board.piecesMap + (to -> piece),
             hands = board.hands.updated(player, board.hands(player) - piece.pieceType),
-            lastAction = Some(Action(player))
+            auxiliaryState = updatedAuxiliaryState
           )
 
           !isChecked(tempBoard, player)
@@ -300,6 +320,25 @@ object Board {
 
   def isPlayerHandContains(board: Board, player: Player, pieceType: PieceType): Boolean = {
     board.hands(player).contains(pieceType)
+  }
+
+  def convertToBoardConfigurationEvent(board: Board, whitePlayer: UserModel, blackPlayer: UserModel): BoardConfigurationEvent = {
+    val boardConfiguration = board.piecesMap.map {
+      case (position, piece) =>
+        PositionPiecePair(position, piece.pieceType)
+    }.toList
+
+    val handPieceCounts = board.hands.flatMap {
+      case (player, multiset) =>
+        multiset.elements.map {
+          case (pieceType, count) =>
+            PieceHandCount(player, pieceType, count)
+        }
+    }.toList
+
+    val playerList = PlayerList(whitePlayer, blackPlayer)
+
+    BoardConfigurationEvent(playerList, boardConfiguration, handPieceCounts)
   }
 }
 

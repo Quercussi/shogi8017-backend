@@ -2,8 +2,9 @@ package com.shogi8017.app.services.logics.pieces
 
 import cats.data.Validated
 import com.shogi8017.app.exceptions.{ActionValidationException, IllegalMove}
+import com.shogi8017.app.services.logics.actions.DropAction
 import com.shogi8017.app.services.logics.pieces.Lance.directions
-import com.shogi8017.app.services.logics.{Board, Direction, DropAction, Player}
+import com.shogi8017.app.services.logics.{Board, Direction, Player}
 
 case class Lance(owner: Player) extends Piece with RangedMovingPieceMethods with DroppablePiece with PromotablePiece {
   def pieceType: PieceType = {

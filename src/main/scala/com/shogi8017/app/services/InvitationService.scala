@@ -2,7 +2,7 @@ package com.shogi8017.app.services
 
 import cats.effect.std.Queue
 import cats.effect.{Concurrent, IO}
-import com.shogi8017.app.repository.{CreateGamePayload, GameRepository}
+import com.shogi8017.app.repository.{CreateInvitationPayload, InvitationRepository}
 import com.shogi8017.app.websocketPayloads.*
 import fs2.Stream
 import fs2.concurrent.Topic
@@ -10,17 +10,21 @@ import fs2.concurrent.Topic
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.*
 
-class InvitationService(gameRepository: GameRepository) {
+class InvitationService(invitationRepository: InvitationRepository) {
   def initiateProcessingStream(queue: Queue[IO, InvitationRequestContext], clientRegistry: InvitationAPIRegistry): Stream[IO, Unit] = {
     Stream
       .repeatEval(queue.take)
-      .evalMap { context =>
-        context.payload match {
-          case RegularInvitationBody(userId) => onRegularInvitationBody(context, clientRegistry, userId)
-          case DisconnectInvitationAPI => onDisconnectInvitationAPI(context, clientRegistry)
-          case InvalidInvitationBody(errorMessage) => onInvalidInvitationBody(context, clientRegistry, errorMessage)
-          case _ => Concurrent[IO].unit
-        }
+      .evalMap {
+        case WebSocketBodyContext(context, payload: RegularInvitationBody) =>
+          onRegularInvitationBody(WebSocketBodyContext(context, payload), clientRegistry)
+
+        case WebSocketBodyContext(context, payload: DisconnectInvitationAPI) =>
+          onDisconnectInvitationAPI(WebSocketBodyContext(context, payload), clientRegistry)
+
+        case WebSocketBodyContext(context, payload: InvalidInvitationBody) =>
+          onInvalidInvitationBody(WebSocketBodyContext(context, payload), clientRegistry)
+
+        case _ => Concurrent[IO].unit
       }
       .concurrently(pingingStream(clientRegistry))
       .handleErrorWith { error =>
@@ -60,30 +64,31 @@ class InvitationService(gameRepository: GameRepository) {
     }
   }
 
-  private def onRegularInvitationBody(context: InvitationRequestContext, clientRegistry: InvitationAPIRegistry, inviteeId: String): IO[Unit] = {
-    val requestingUser= context.requestingUser
-    val gameModelEither = gameRepository.createGame(CreateGamePayload(requestingUser.userId, inviteeId))
-    gameModelEither.flatMap {
-      case Right(gameModel) =>
-        publishToTopic(context.requestingUser.userId, clientRegistry, InvitationInitializingEvent(gameModel.gameId)) *>
-        publishToTopic(inviteeId, clientRegistry, InvitationNotificationEvent(gameModel.gameId, requestingUser))
+  private def onRegularInvitationBody(request: RegularInvitationBodyContext, clientRegistry: InvitationAPIRegistry): IO[Unit] = {
+    val (inviter, inviteeId) = (request.context, request.payload.userId)
+    val invitationModelEither = invitationRepository.createInvitation(CreateInvitationPayload(inviter.userId, inviteeId))
+    invitationModelEither.flatMap {
+      case Right(invitationModel) =>
+        publishToTopic(request.context.userId, clientRegistry, InvitationInitializingEvent(invitationModel.gameCertificate)) *>
+        publishToTopic(inviteeId, clientRegistry, InvitationNotificationEvent(invitationModel.gameCertificate, inviter))
       case Left(e) => 
-        publishToTopic(context.requestingUser.userId, clientRegistry, InvalidInvitationEvent(e.toString))
+        publishToTopic(request.context.userId, clientRegistry, InvalidInvitationEvent(e.toString))
     }
   }
 
-  private def onDisconnectInvitationAPI(context: InvitationRequestContext, clientRegistry: InvitationAPIRegistry): IO[Unit] = {
-    clientRegistry.remove(context.requestingUser.userId)
+  private def onDisconnectInvitationAPI(request: DisconnectInvitationAPIContext, clientRegistry: InvitationAPIRegistry): IO[Unit] = {
+    clientRegistry.remove(request.context.userId)
     Concurrent[IO].unit
   }
 
-  private def onInvalidInvitationBody(context: InvitationRequestContext, clientRegistry: InvitationAPIRegistry, errorMessage: String): IO[Unit] = {
-    publishToTopic(context.requestingUser.userId, clientRegistry, InvalidInvitationEvent(s"Invalid invitation body: $errorMessage"))
+  private def onInvalidInvitationBody(request: InvalidInvitationBodyContext, clientRegistry: InvitationAPIRegistry): IO[Unit] = {
+    val (inviterId, errorMessage) = (request.context.userId, request.payload.errorMessage)
+    publishToTopic(inviterId, clientRegistry, InvalidInvitationEvent(s"Invalid invitation body: $errorMessage"))
   }
 }
 
 object InvitationService {
-  def of(gameRepository: GameRepository): InvitationService = {
-    new InvitationService(gameRepository)
+  def of(invitationRepository: InvitationRepository): InvitationService = {
+    new InvitationService(invitationRepository)
   }
 }

@@ -38,7 +38,7 @@ class InvitationRoutes(processQueue: Queue[IO, InvitationRequestContext], client
         }
 
       case Close(_) =>
-        queue.offer(WebSocketBodyContext(user, DisconnectInvitationAPI))
+        queue.offer(WebSocketBodyContext(user, DisconnectInvitationAPI()))
 
       case _ => IO.unit
     }
@@ -52,8 +52,6 @@ class InvitationRoutes(processQueue: Queue[IO, InvitationRequestContext], client
   }
 
   def routes(wsb: WebSocketBuilder2[IO]): AuthedRoutes[UserModel, IO] = AuthedRoutes.of {
-    case GET -> Root / "invite_health" as user =>
-      Ok(user.username)
     case GET -> Root / "invite" as user =>
       (for {
         t <- Topic[IO, InvitationEvent]

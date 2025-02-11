@@ -21,6 +21,12 @@ class UserRepository(trx: Transactor[IO]) {
     }
   }
 
+  def getUserById(payload: GetUserPayload): IO[Either[Throwable, Option[UserModel]]] = {
+    val userId = payload.userId
+    val query: Query0[UserModel] = sql"SELECT * FROM users u WHERE u.userId = $userId".query[UserModel]
+    query.option.transact(trx).attempt
+  }
+  
   def findUserByUsername(payload: FindUserByUsernamePayload): IO[Either[Throwable, Option[UserModelWithPassword]]] = {
     val username = payload.username
     val query: Query0[UserModelWithPassword] = sql"SELECT * FROM users u WHERE u.username = $username".query[UserModelWithPassword]

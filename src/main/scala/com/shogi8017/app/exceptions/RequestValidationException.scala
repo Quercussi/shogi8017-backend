@@ -12,6 +12,7 @@ sealed trait AuthorizationException extends RequestValidationException
 case object UserUnauthorized extends AuthorizationException
 
 sealed trait GameActionRequestException extends RequestValidationException
+case object UserNotInvited extends GameActionRequestException
 case object UserNotInGame extends GameActionRequestException
 case object MissingWhitePlayer extends GameActionRequestException
 case object MissingBlackPlayer extends GameActionRequestException

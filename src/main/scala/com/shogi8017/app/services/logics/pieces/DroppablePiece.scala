@@ -3,8 +3,9 @@ package com.shogi8017.app.services.logics.pieces
 import cats.data.Validated
 import com.shogi8017.app.exceptions.{ActionValidationException, IllegalDrop}
 import com.shogi8017.app.services.logics.Board.{getEmptyPositions, isOccupied, isPlayerHandContains}
-import com.shogi8017.app.services.logics.{Board, BoardAction, BoardTransition, DropAction, Position, StateTransitionList}
-import com.shogi8017.app.services.logics.BoardAction.*
+import com.shogi8017.app.services.logics.{Board, BoardActionEnumerators, BoardTransition, Position, StateTransition, StateTransitionList}
+import com.shogi8017.app.services.logics.BoardActionEnumerators.*
+import com.shogi8017.app.services.logics.actions.DropAction
 
 trait DroppablePiece extends Piece {
   def getBoardTransitionOnDrop(board: Board, drop: DropAction): Validated[ActionValidationException, BoardTransition] = {
@@ -24,8 +25,8 @@ trait DroppablePiece extends Piece {
       Validated.invalid(IllegalDrop)
     } else {
       val stateTransitionList: StateTransitionList = List(
-        (ADD, drop.position, this.owner, this.pieceType),
-        (HAND_REMOVE, Position.sentinelPosition,  this.owner, this.pieceType))
+        StateTransition(ADD, drop.position, this.owner, this.pieceType),
+        StateTransition(HAND_REMOVE, Position.sentinelPosition,  this.owner, this.pieceType))
       // TODO: implement algebraic notation
       Validated.valid((stateTransitionList, ""))
     }

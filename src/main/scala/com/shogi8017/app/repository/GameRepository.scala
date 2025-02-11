@@ -4,7 +4,7 @@ import cats.effect.IO
 import cats.effect.std.UUIDGen
 import com.shogi8017.app.database.DatabaseResource
 import com.shogi8017.app.models.enumerators.GameState.PENDING
-import com.shogi8017.app.models.GameModel
+import com.shogi8017.app.models.{BoardHistoryModel, GameModel}
 import doobie.*
 import doobie.implicits.*
 
@@ -23,17 +23,23 @@ class GameRepository(trx: Transactor[IO]) {
 
         _ <-
           sql"""
-            INSERT INTO games (gameId, boardId, whiteUserId, blackUserId, gameState)
-            VALUES ($gameId, $boardId, ${payload.whiteUserId}, ${payload.blackUserId}, 'PENDING')
+            INSERT INTO games (gameId, gameCertificate, boardId, whiteUserId, blackUserId, gameState)
+            VALUES ($gameId, ${payload.gameCertificate}, $boardId, ${payload.whiteUserId}, ${payload.blackUserId}, 'PENDING')
           """.update.run
 
-        _ <-
-          sql"""
-            INSERT INTO invitations (invitationId, gameId)
-            VALUES ($invitationId, $gameId)
-          """.update.run
-
-      } yield GameModel(gameId, payload.whiteUserId, payload.blackUserId, None, PENDING)).transact(trx)
+      } yield GameModel(gameId, payload.gameCertificate, boardId, payload.whiteUserId, payload.blackUserId, None, PENDING)).transact(trx)
+    } yield result).attempt
+  }
+  
+  def getGame(payload: GetGamePayload): IO[Either[Throwable, Option[GameModel]]] = {
+    (for {
+      result <- (for {
+        game <- sql"""
+          SELECT *
+          FROM games
+          WHERE gameCertificate = ${payload.gameCertificate}
+        """.query[GameModel].option
+      } yield game).transact(trx)
     } yield result).attempt
   }
 }

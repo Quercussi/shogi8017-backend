@@ -1,6 +1,7 @@
 package com.shogi8017.app.services.logics.pieces
 
-import com.shogi8017.app.services.logics.{Board, Direction, MoveAction, Position}
+import com.shogi8017.app.services.logics.actions.MoveAction
+import com.shogi8017.app.services.logics.{Board, Direction, Position}
 
 trait UnitMovingPiece extends Piece {
   

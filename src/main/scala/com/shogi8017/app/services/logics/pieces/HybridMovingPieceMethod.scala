@@ -2,7 +2,8 @@ package com.shogi8017.app.services.logics.pieces
 
 import cats.data.Validated
 import com.shogi8017.app.exceptions.{IllegalMove, ActionValidationException}
-import com.shogi8017.app.services.logics.{Board, BoardTransition, Direction, MoveAction, Position}
+import com.shogi8017.app.services.logics.actions.MoveAction
+import com.shogi8017.app.services.logics.{Board, BoardTransition, Direction, Position}
 
 trait HybridMovingPieceMethod extends Piece with UnitMovingPiece with RangedMovingPiece with MovementValidationMethod {
   def unitDirections: List[Direction]

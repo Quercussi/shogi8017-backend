@@ -1,13 +1,11 @@
 package com.shogi8017.app.services.logics.pieces
 
-import cats.data.{RWS, Validated}
+import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import com.shogi8017.app.exceptions.*
-import com.shogi8017.app.services.*
-import com.shogi8017.app.services.logics.Board.*
-import com.shogi8017.app.services.logics.BoardAction.*
-import com.shogi8017.app.services.logics.pieces.{PieceType, PromotablePieceType}
-import com.shogi8017.app.services.logics.*
+import com.shogi8017.app.exceptions._
+import com.shogi8017.app.services.logics._
+import com.shogi8017.app.services.logics.Board._
+import com.shogi8017.app.services.logics.actions.{DropAction, MoveAction, OnBoardAction}
 
 trait Piece() {
   val owner: Player
@@ -44,8 +42,8 @@ trait Piece() {
 }
 
 object Piece {
-  def validateAndApplyAction(piece: Piece, board: Board, action: PlayerAction): Validated[ActionValidationException, BoardStateTransition] = {
-    val validationFunction: PartialFunction[PlayerAction, Validated[ActionValidationException, BoardTransition]] = {
+  def validateAndApplyAction(piece: Piece, board: Board, action: OnBoardAction): Validated[ActionValidationException, BoardStateTransition] = {
+    val validationFunction: PartialFunction[OnBoardAction, Validated[ActionValidationException, BoardTransition]] = {
       case move: MoveAction if !piece.isSelfPin(board, move) =>
         piece.getBoardTransitionOnMove(board, move)
       case _: MoveAction =>

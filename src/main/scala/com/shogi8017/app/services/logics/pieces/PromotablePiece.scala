@@ -1,7 +1,8 @@
 package com.shogi8017.app.services.logics.pieces
 
 import com.shogi8017.app.exceptions.{ExpectingPromotion, IllegalPromotion, IncorrectPromotionScenario}
-import com.shogi8017.app.services.logics.{Board, MoveAction, Player}
+import com.shogi8017.app.services.logics.actions.MoveAction
+import com.shogi8017.app.services.logics.{Board, Player}
 
 trait PromotablePiece extends Piece {
   def validatePromotion(board: Board, move: MoveAction): Option[IllegalPromotion] = {

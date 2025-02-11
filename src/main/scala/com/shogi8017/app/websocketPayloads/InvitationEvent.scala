@@ -10,9 +10,9 @@ import scala.collection.concurrent.TrieMap
 
 sealed trait InvitationEvent
 
-case class InvitationNotificationEvent(gameId: String, invitingUser: UserModel) extends InvitationEvent
+case class InvitationNotificationEvent(gameCertificate: String, invitingUser: UserModel) extends InvitationEvent
 
-case class InvitationInitializingEvent(gameId: String) extends InvitationEvent
+case class InvitationInitializingEvent(gameCertificate: String) extends InvitationEvent
 
 case class InvalidInvitationEvent(errorMessage: String) extends InvitationEvent
 
@@ -23,9 +23,7 @@ case object KeepAliveInvitationAPI extends InvitationEvent
 //case object KeepAliveInvitationAPIEvent extends InvitationEvent
 
 object InvitationEvent {
-
-  implicit val userModelEncoder: Encoder[UserModel] = deriveEncoder
-
+  
   implicit val invitationNotificationEventEncoder: Encoder[InvitationNotificationEvent] = deriveEncoder
   implicit val invitationResponseEventEncoder: Encoder[InvitationInitializingEvent] = deriveEncoder
   implicit val invalidInvitationEventEncoder: Encoder[InvalidInvitationEvent] = deriveEncoder
@@ -41,14 +39,13 @@ object InvitationEvent {
         "type" -> Json.fromString("InvitationResponse"),
         "event" -> invitationResponseEventEncoder(response)
       )
-    case error: InvalidInvitationEvent => {
+    case error: InvalidInvitationEvent =>
       Json.obj(
         "type" -> Json.fromString("InvalidInvitation"),
         "event" -> Json.obj(
           "errorMessage" -> invalidInvitationEventEncoder(error)
         )
       )
-    }
   }
 }
 

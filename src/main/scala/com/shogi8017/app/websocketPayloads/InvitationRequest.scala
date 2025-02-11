@@ -20,7 +20,7 @@ case class RegularInvitationBody(userId: String) extends InvitationRequest
 
 case class InvalidInvitationBody(errorMessage: String) extends InvitationRequest
 
-case object DisconnectInvitationAPI extends InvitationRequest
+case class DisconnectInvitationAPI() extends InvitationRequest
 
 object InvitationRequest {
 

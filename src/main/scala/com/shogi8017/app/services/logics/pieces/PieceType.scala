@@ -1,6 +1,8 @@
 package com.shogi8017.app.services.logics.pieces
 
 import com.shogi8017.app.services.logics.Player
+import doobie.util.{Get, Put}
+import io.circe.{Decoder, Encoder}
 
 sealed trait PieceType
 
@@ -33,6 +35,50 @@ object PieceType {
       case UnPromotablePieceType.KING => King(player)
       case UnPromotablePieceType.GOLD => Gold(player)
     }
+  }
+  
+  implicit val pieceTypeDecoder: Decoder[PieceType] = Decoder[String].emap {
+    case "ROOK" => Right(PromotablePieceType.ROOK)
+    case "BISHOP" => Right(PromotablePieceType.BISHOP)
+    case "LANCE" => Right(PromotablePieceType.LANCE)
+    case "KNIGHT" => Right(PromotablePieceType.KNIGHT)
+    case "SILVER" => Right(PromotablePieceType.SILVER)
+    case "PAWN" => Right(PromotablePieceType.PAWN)
+    case "P_ROOK" => Right(PromotedPieceType.P_ROOK)
+    case "P_BISHOP" => Right(PromotedPieceType.P_BISHOP)
+    case "P_LANCE" => Right(PromotedPieceType.P_LANCE)
+    case "P_KNIGHT" => Right(PromotedPieceType.P_KNIGHT)
+    case "P_SILVER" => Right(PromotedPieceType.P_SILVER)
+    case "P_PAWN" => Right(PromotedPieceType.P_PAWN)
+    case "KING" => Right(UnPromotablePieceType.KING)
+    case "GOLD" => Right(UnPromotablePieceType.GOLD)
+    case other => Left(s"Unknown PieceType: $other")
+  }
+
+  implicit val pieceTypeGet: Get[PieceType] = Get[String].temap {
+    case "ROOK" => Right(PromotablePieceType.ROOK)
+    case "BISHOP" => Right(PromotablePieceType.BISHOP)
+    case "LANCE" => Right(PromotablePieceType.LANCE)
+    case "KNIGHT" => Right(PromotablePieceType.KNIGHT)
+    case "SILVER" => Right(PromotablePieceType.SILVER)
+    case "PAWN" => Right(PromotablePieceType.PAWN)
+    case "P_ROOK" => Right(PromotedPieceType.P_ROOK)
+    case "P_BISHOP" => Right(PromotedPieceType.P_BISHOP)
+    case "P_LANCE" => Right(PromotedPieceType.P_LANCE)
+    case "P_KNIGHT" => Right(PromotedPieceType.P_KNIGHT)
+    case "P_SILVER" => Right(PromotedPieceType.P_SILVER)
+    case "P_PAWN" => Right(PromotedPieceType.P_PAWN)
+    case "KING" => Right(UnPromotablePieceType.KING)
+    case "GOLD" => Right(UnPromotablePieceType.GOLD)
+    case other => Left(s"Invalid PieceType: $other")
+  }
+
+  implicit val pieceTypePut: Put[PieceType] = Put[String].contramap(_.toString)
+
+  implicit val pieceTypeEncoder: Encoder[PieceType] = Encoder[String].contramap {
+    case piece: PromotablePieceType => piece.toString
+    case piece: PromotedPieceType => piece.toString
+    case piece: UnPromotablePieceType => piece.toString
   }
 }
 

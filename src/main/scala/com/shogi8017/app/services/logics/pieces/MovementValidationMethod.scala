@@ -2,8 +2,9 @@ package com.shogi8017.app.services.logics.pieces
 
 import cats.data.Validated
 import com.shogi8017.app.exceptions.{ActionValidationException, CannotPromote, IllegalMove}
-import com.shogi8017.app.services.logics.BoardAction.{ADD, HAND_ADD, REMOVE}
-import com.shogi8017.app.services.logics.{Board, BoardTransition, MoveAction, Player, Position, StateTransition}
+import com.shogi8017.app.services.logics.BoardActionEnumerators.{ADD, HAND_ADD, REMOVE}
+import com.shogi8017.app.services.logics.actions.MoveAction
+import com.shogi8017.app.services.logics.{Board, BoardTransition, Player, Position, StateTransition}
 
 trait MovementValidationMethod extends Piece {
   def canMoveTo(board: Board, move: MoveAction): Boolean
@@ -31,14 +32,14 @@ trait MovementValidationMethod extends Piece {
   private def getActionListOnMove(board: Board, move: MoveAction): BoardTransition = {
     val (from, to) = move.getFromToPositions
 
-    val fromAction: Option[StateTransition] = Some((REMOVE, from, owner, pieceType))
+    val fromAction: Option[StateTransition] = Some(StateTransition(REMOVE, from, owner, pieceType))
 
     val replacingPiece: PieceType = pieceType match {
       case promotable: PromotablePieceType if move.toPromote => PromotablePieceType.promote(promotable)
       case pt => pt
     }
 
-    val toAction: Option[StateTransition] = Some((ADD, to, owner, replacingPiece))
+    val toAction: Option[StateTransition] = Some(StateTransition(ADD, to, owner, replacingPiece))
 
     val capturingPiece = board.piecesMap.get(to)
     val capturingActions: List[Option[StateTransition]] = capturingPiece.map { p =>
@@ -47,8 +48,8 @@ trait MovementValidationMethod extends Piece {
         case other => other
       }
       List(
-        Some((REMOVE, to, p.owner, p.pieceType)),
-        Some((HAND_ADD, Position.sentinelPosition, Player.opponent(p.owner), pieceTypeToAddToHand))
+        Some(StateTransition(REMOVE, to, p.owner, p.pieceType)),
+        Some(StateTransition(HAND_ADD, Position.sentinelPosition, Player.opponent(p.owner), pieceTypeToAddToHand))
       )
     }.getOrElse(List.empty)
 

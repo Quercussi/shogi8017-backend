@@ -1,6 +1,7 @@
 package com.shogi8017.app.services.logics.pieces
 
-import com.shogi8017.app.services.logics.{Board, Direction, DropAction, Player}
+import com.shogi8017.app.services.logics.actions.DropAction
+import com.shogi8017.app.services.logics.{Board, Direction, Player}
 
 case class Knight(owner: Player) extends Piece with UnitMovingPieceMethods with DroppablePiece with PromotablePiece {
   def pieceType: PieceType = {

@@ -23,4 +23,5 @@ case object NoPieceInHand extends IllegalDrop
 case object InvalidDropPiece extends IllegalDrop
 
 sealed trait GameStateException extends GameValidationException
-case object NoKingException$ extends GameStateException
+case object NoKingException extends GameStateException
+case object GameAlreadyEndedException extends GameStateException

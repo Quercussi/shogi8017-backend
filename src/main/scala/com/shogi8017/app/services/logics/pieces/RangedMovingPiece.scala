@@ -2,7 +2,8 @@ package com.shogi8017.app.services.logics.pieces
 
 import com.shogi8017.app.services.logics.Board.isOccupied
 import com.shogi8017.app.services.logics.Direction.calculateDirection
-import com.shogi8017.app.services.logics.{Board, Direction, MoveAction, Position}
+import com.shogi8017.app.services.logics.actions.MoveAction
+import com.shogi8017.app.services.logics.{Board, Direction, Position}
 
 import scala.annotation.tailrec
 

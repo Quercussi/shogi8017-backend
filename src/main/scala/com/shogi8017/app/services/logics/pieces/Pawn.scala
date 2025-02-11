@@ -1,6 +1,7 @@
 package com.shogi8017.app.services.logics.pieces
 
 import com.shogi8017.app.services.logics.*
+import com.shogi8017.app.services.logics.actions.DropAction
 import com.shogi8017.app.utils.Multiset
 
 case class Pawn(owner: Player) extends Piece with UnitMovingPieceMethods with DroppablePiece with PromotablePiece {
@@ -22,7 +23,7 @@ case class Pawn(owner: Player) extends Piece with UnitMovingPieceMethods with Dr
     lazy val tempBoard = board.copy(
       piecesMap = board.piecesMap + (drop.position -> this),
       hands = board.hands.updated(this.owner, board.hands.getOrElse(this.owner, Multiset.empty) - this.pieceType),
-      lastAction = Some(Action(this.owner))
+      auxiliaryState = board.auxiliaryState.copy(lastAction = Some(Actor(this.owner)))
     )
 
     val dropPawnMateValidation = !Board.isCheckmated(tempBoard, Player.opponent(this.owner))

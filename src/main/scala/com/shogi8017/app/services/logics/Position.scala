@@ -1,7 +1,10 @@
 package com.shogi8017.app.services.logics
 
 import com.shogi8017.app.services.logics.Board.*
+import com.shogi8017.app.services.logics.actions.MoveAction
 import com.shogi8017.app.services.logics.pieces.PromotablePiece
+import io.circe.Encoder
+import io.circe.generic.semiauto.deriveEncoder
 
 case class Position(x: Int, y: Int) {
   /**
@@ -46,4 +49,6 @@ case class Position(x: Int, y: Int) {
 
 object Position {
   def sentinelPosition: Position = Position(-1, -1)
+  
+  implicit val positionEncoder: Encoder[Position] = deriveEncoder
 }
