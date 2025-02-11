@@ -3,6 +3,7 @@ package com.shogi8017.app.services.logics
 import com.shogi8017.app.exceptions.{IllegalMove, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.actions.{DropAction, MoveAction}
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.{KNIGHT, ROOK, SILVER}
 import com.shogi8017.app.services.logics.pieces.{Knight, PromotedSilver, Silver}
 import com.shogi8017.app.utils.Multiset
@@ -25,13 +26,13 @@ class SilverTest extends AnyFunSuite:
         Position(8, 8) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
-
-    val testSeqWhite = generateReachablePositions(WHITE_PLAYER)(Position(2, 2))
-    testSeqWhite.foreach(pos => testAction(WHITE_PLAYER, MoveAction(Position(2, 2), pos), Silver(WHITE_PLAYER), s0))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     val testSeqBlack = generateReachablePositions(BLACK_PLAYER)(Position(8, 8))
-    testSeqBlack.foreach(pos => testAction(BLACK_PLAYER, MoveAction(Position(8, 8), pos), Silver(BLACK_PLAYER), s1))
+    testSeqBlack.foreach(pos => testAction(BLACK_PLAYER, MoveAction(Position(8, 8), pos), Silver(BLACK_PLAYER), s0))
+
+    val testSeqWhite = generateReachablePositions(WHITE_PLAYER)(Position(2, 2))
+    testSeqWhite.foreach(pos => testAction(WHITE_PLAYER, MoveAction(Position(2, 2), pos), Silver(WHITE_PLAYER), s1))
   }
 
   test("A Silver should not move like something else") {
@@ -41,17 +42,15 @@ class SilverTest extends AnyFunSuite:
         Position(7, 7) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
-
-
-
-    val whiteReachablePositions = generateReachablePositions(WHITE_PLAYER)(Position(3, 3))
-    val testSeqWhite = getAllPosition.filterNot(whiteReachablePositions.contains).filterNot(_ == Position(3, 3))
-    testSeqWhite.foreach(pos => testActionError(WHITE_PLAYER, MoveAction(Position(3, 3), pos), IllegalMove, s0))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     val blackReachablePositions = generateReachablePositions(BLACK_PLAYER)(Position(7, 7))
     val testSeqBlack = getAllPosition.filterNot(blackReachablePositions.contains).filterNot(_ == Position(7, 7))
-    testSeqBlack.foreach(pos => testActionError(BLACK_PLAYER, MoveAction(Position(7, 7), pos), IllegalMove, s1))
+    testSeqBlack.foreach(pos => testActionError(BLACK_PLAYER, MoveAction(Position(7, 7), pos), IllegalMove, s0))
+
+    val whiteReachablePositions = generateReachablePositions(WHITE_PLAYER)(Position(3, 3))
+    val testSeqWhite = getAllPosition.filterNot(whiteReachablePositions.contains).filterNot(_ == Position(3, 3))
+    testSeqWhite.foreach(pos => testActionError(WHITE_PLAYER, MoveAction(Position(3, 3), pos), IllegalMove, s1))
   }
 
   test("A Silver should capture like a Silver") {
@@ -61,24 +60,24 @@ class SilverTest extends AnyFunSuite:
         Position(8, 8) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
-
-    val testSeqWhite = generateReachablePositions(WHITE_PLAYER)(Position(2, 2))
-    testSeqWhite.foreach(pos => {
-      val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(BLACK_PLAYER)))
-      val r0 = testAction(WHITE_PLAYER, MoveAction(Position(2, 2), pos), Silver(WHITE_PLAYER), s0_temp)
-      assert(r0.piecesMap.size == 4)
-      assert(r0.hands.get(WHITE_PLAYER).contains(Multiset(KNIGHT)))
-      assert(r0.hands.get(BLACK_PLAYER).contains(Multiset.empty))
-    })
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     val testSeqBlack = generateReachablePositions(BLACK_PLAYER)(Position(8, 8))
     testSeqBlack.foreach(pos => {
-      val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(WHITE_PLAYER)))
-      val r1 = testAction(BLACK_PLAYER, MoveAction(Position(8, 8), pos), Silver(BLACK_PLAYER), s1_temp)
+      val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(WHITE_PLAYER)))
+      val r0 = testAction(BLACK_PLAYER, MoveAction(Position(8, 8), pos), Silver(BLACK_PLAYER), s0_temp)
+      assert(r0.piecesMap.size == 4)
+      assert(r0.hands.get(WHITE_PLAYER).contains(Multiset.empty))
+      assert(r0.hands.get(BLACK_PLAYER).contains(Multiset(KNIGHT)))
+    })
+
+    val testSeqWhite = generateReachablePositions(WHITE_PLAYER)(Position(2, 2))
+    testSeqWhite.foreach(pos => {
+      val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(BLACK_PLAYER)))
+      val r1 = testAction(WHITE_PLAYER, MoveAction(Position(2, 2), pos), Silver(WHITE_PLAYER), s1_temp)
       assert(r1.piecesMap.size == 4)
-      assert(r1.hands.get(WHITE_PLAYER).contains(Multiset.empty))
-      assert(r1.hands.get(BLACK_PLAYER).contains(Multiset(KNIGHT)))
+      assert(r1.hands.get(WHITE_PLAYER).contains(Multiset(KNIGHT)))
+      assert(r1.hands.get(BLACK_PLAYER).contains(Multiset.empty))
     })
   }
 
@@ -89,18 +88,18 @@ class SilverTest extends AnyFunSuite:
         Position(8, 8) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
-
-    val testSeqWhite = generateReachablePositions(WHITE_PLAYER)(Position(2, 2))
-    testSeqWhite.foreach(pos => {
-      val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(WHITE_PLAYER)))
-      testActionError(WHITE_PLAYER, MoveAction(Position(2, 2), pos), IllegalMove, s0_temp)
-    })
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     val testSeqBlack = generateReachablePositions(BLACK_PLAYER)(Position(8, 8))
     testSeqBlack.foreach(pos => {
-      val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(BLACK_PLAYER)))
-      testActionError(BLACK_PLAYER, MoveAction(Position(8, 8), pos), IllegalMove, s1_temp)
+      val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(BLACK_PLAYER)))
+      testActionError(BLACK_PLAYER, MoveAction(Position(8, 8), pos), IllegalMove, s0_temp)
+    })
+
+    val testSeqWhite = generateReachablePositions(WHITE_PLAYER)(Position(2, 2))
+    testSeqWhite.foreach(pos => {
+      val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(WHITE_PLAYER)))
+      testActionError(WHITE_PLAYER, MoveAction(Position(2, 2), pos), IllegalMove, s1_temp)
     })
   }
 
@@ -111,20 +110,20 @@ class SilverTest extends AnyFunSuite:
         Position(7, 7) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
-
-    val whiteReachablePositions = generateReachablePositions(WHITE_PLAYER)(Position(3, 3))
-    val testSeqWhite = getAllPosition.filterNot(whiteReachablePositions.contains).filterNot(p => p == Position(3, 3) || p == Position(5, 1) || p == Position(5, 9))
-    testSeqWhite.foreach(pos => {
-      val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(BLACK_PLAYER)))
-      testActionError(WHITE_PLAYER, MoveAction(Position(3, 3), pos), IllegalMove, s0_temp)
-    })
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     val blackReachablePositions = generateReachablePositions(BLACK_PLAYER)(Position(7, 7))
     val testSeqBlack = getAllPosition.filterNot(blackReachablePositions.contains).filterNot(p => p == Position(7, 7) || p == Position(5, 1) || p == Position(5, 9))
     testSeqBlack.foreach(pos => {
-      val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(WHITE_PLAYER)))
-      testActionError(BLACK_PLAYER, MoveAction(Position(7, 7), pos), IllegalMove, s1_temp)
+      val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(WHITE_PLAYER)))
+      testActionError(BLACK_PLAYER, MoveAction(Position(7, 7), pos), IllegalMove, s0_temp)
+    })
+
+    val whiteReachablePositions = generateReachablePositions(WHITE_PLAYER)(Position(3, 3))
+    val testSeqWhite = getAllPosition.filterNot(whiteReachablePositions.contains).filterNot(p => p == Position(3, 3) || p == Position(5, 1) || p == Position(5, 9))
+    testSeqWhite.foreach(pos => {
+      val s1_temp = s1.copy(piecesMap = s1.piecesMap + (pos -> Knight(BLACK_PLAYER)))
+      testActionError(WHITE_PLAYER, MoveAction(Position(3, 3), pos), IllegalMove, s1_temp)
     })
   }
 
@@ -137,21 +136,19 @@ class SilverTest extends AnyFunSuite:
         Position(8, 3) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
-    (1 to 3).foreach(col =>
-      testAction(WHITE_PLAYER, MoveAction(Position(2, 6), Position(col, 7), false), Silver(WHITE_PLAYER), s0)
-    )
-    (1 to 3).foreach(col => testAction(WHITE_PLAYER, MoveAction(Position(2, 6), Position(col, 7), true),  PromotedSilver(WHITE_PLAYER), s0))
+    (5 to 7).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(col, 3), false), Silver(BLACK_PLAYER), s0))
+    (5 to 7).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(col, 3), true),  PromotedSilver(BLACK_PLAYER), s0))
 
-    Seq(3,5).foreach(col => testAction(WHITE_PLAYER, MoveAction(Position(4, 7), Position(col, 6), false), Silver(WHITE_PLAYER), s0))
-    Seq(3,5).foreach(col => testAction(WHITE_PLAYER, MoveAction(Position(4, 7), Position(col, 6), true),  PromotedSilver(WHITE_PLAYER), s0))
+    Seq(7,9).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(8, 3), Position(col, 4), false), Silver(BLACK_PLAYER), s0))
+    Seq(7,9).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(8, 3), Position(col, 4), true),  PromotedSilver(BLACK_PLAYER), s0))
 
-    (5 to 7).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(col, 3), false), Silver(BLACK_PLAYER), s1))
-    (5 to 7).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(col, 3), true),  PromotedSilver(BLACK_PLAYER), s1))
+    (1 to 3).foreach(col => testAction(WHITE_PLAYER, MoveAction(Position(2, 6), Position(col, 7), false), Silver(WHITE_PLAYER), s1))
+    (1 to 3).foreach(col => testAction(WHITE_PLAYER, MoveAction(Position(2, 6), Position(col, 7), true),  PromotedSilver(WHITE_PLAYER), s1))
 
-    Seq(7,9).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(8, 3), Position(col, 4), false), Silver(BLACK_PLAYER), s1))
-    Seq(7,9).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(8, 3), Position(col, 4), true),  PromotedSilver(BLACK_PLAYER), s1))
+    Seq(3,5).foreach(col => testAction(WHITE_PLAYER, MoveAction(Position(4, 7), Position(col, 6), false), Silver(WHITE_PLAYER), s1))
+    Seq(3,5).foreach(col => testAction(WHITE_PLAYER, MoveAction(Position(4, 7), Position(col, 6), true),  PromotedSilver(WHITE_PLAYER), s1))
   }
 
   test("Silver cannot promote outside the last three rank") {
@@ -161,14 +158,14 @@ class SilverTest extends AnyFunSuite:
         Position(8, 6) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
-
-    generateReachablePositions(WHITE_PLAYER)(Position(2, 4)).foreach(pos =>
-      testActionError(WHITE_PLAYER, MoveAction(Position(2, 4), pos, true), IncorrectPromotionScenario, s0)
-    )
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     generateReachablePositions(BLACK_PLAYER)(Position(8, 6)).foreach(pos =>
-      testActionError(BLACK_PLAYER, MoveAction(Position(8, 6), pos, true), IncorrectPromotionScenario, s1)
+      testActionError(BLACK_PLAYER, MoveAction(Position(8, 6), pos, true), IncorrectPromotionScenario, s0)
+    )
+
+    generateReachablePositions(WHITE_PLAYER)(Position(2, 4)).foreach(pos =>
+      testActionError(WHITE_PLAYER, MoveAction(Position(2, 4), pos, true), IncorrectPromotionScenario, s1)
     )
   }
 
@@ -204,7 +201,7 @@ class SilverTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(SILVER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     val allPositions = for {
       row <- 1 to 9
@@ -214,16 +211,16 @@ class SilverTest extends AnyFunSuite:
     val allDroppablePosition = allPositions.filterNot(s0.piecesMap.contains)
 
     allDroppablePosition.foreach(pos => {
-      val r0 = testAction(WHITE_PLAYER, DropAction(pos, SILVER), Silver(WHITE_PLAYER), s0)
+      val r0 = testAction(BLACK_PLAYER, DropAction(pos, SILVER), Silver(BLACK_PLAYER), s0)
       assert(r0.piecesMap.size == 3)
-      assert(r0.hands.get(WHITE_PLAYER).contains(Multiset.empty))
-      assert(r0.hands.get(BLACK_PLAYER).contains(Multiset(SILVER)))
+      assert(r0.hands.get(WHITE_PLAYER).contains(Multiset(SILVER)))
+      assert(r0.hands.get(BLACK_PLAYER).contains(Multiset.empty))
     })
 
     allDroppablePosition.foreach(pos => {
-      val r1 = testAction(BLACK_PLAYER, DropAction(pos, SILVER), Silver(BLACK_PLAYER), s1)
+      val r1 = testAction(WHITE_PLAYER, DropAction(pos, SILVER), Silver(WHITE_PLAYER), s1)
       assert(r1.piecesMap.size == 3)
-      assert(r1.hands.get(WHITE_PLAYER).contains(Multiset(SILVER)))
-      assert(r1.hands.get(BLACK_PLAYER).contains(Multiset.empty))
+      assert(r1.hands.get(WHITE_PLAYER).contains(Multiset.empty))
+      assert(r1.hands.get(BLACK_PLAYER).contains(Multiset(SILVER)))
     })
   }

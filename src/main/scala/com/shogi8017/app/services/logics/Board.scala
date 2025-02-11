@@ -169,7 +169,7 @@ object Board {
 
   private def isOutOfTurn(lastAction: Option[Action], currentPlayer: Player): Boolean =
     lastAction match
-      case None => currentPlayer == BLACK_PLAYER
+      case None => currentPlayer == WHITE_PLAYER
       case Some(lastAction) => lastAction.player == currentPlayer
 
   // TODO: check impasse

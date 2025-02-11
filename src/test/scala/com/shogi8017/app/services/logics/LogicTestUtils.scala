@@ -1,7 +1,8 @@
 package com.shogi8017.app.services.logics
 
 import cats.data.Validated.{Invalid, Valid}
-import com.shogi8017.app.services.logics.Board.executeAction
+import com.shogi8017.app.services.logics.Board.executeOnBoardAction
+import com.shogi8017.app.services.logics.actions.{DropAction, MoveAction, OnBoardAction}
 import com.shogi8017.app.services.logics.pieces.Piece
 import org.scalatest.Assertions.fail
 
@@ -13,12 +14,12 @@ object LogicTestUtils {
     } yield Position(row, col)
   }
 
-  def testAction(player: Player, playerAction: PlayerAction, expectedPiece: Piece, board: Board = Board.defaultInitialPosition): Board = {
-    val result = executeAction(board, player, playerAction)
+  def testAction(player: Player, onBoardAction: OnBoardAction, expectedPiece: Piece, board: Board = Board.defaultInitialPosition): Board = {
+    val result = executeOnBoardAction(board, player, onBoardAction)
 
     result match {
       case Valid((newBoard, _, _, _)) =>
-        val targetPosition = playerAction match {
+        val targetPosition = onBoardAction match {
           case DropAction(position, _) => position
           case MoveAction(_, to, _)   => to
         }
@@ -32,8 +33,8 @@ object LogicTestUtils {
     }
   }
 
-  def testActionError(player: Player, playerAction: PlayerAction, expectedException: Exception, board: Board = Board.defaultInitialPosition): Unit = {
-    val result = executeAction(board, player, playerAction)
+  def testActionError(player: Player, onBoardAction: OnBoardAction, expectedException: Exception, board: Board = Board.defaultInitialPosition): Unit = {
+    val result = executeOnBoardAction(board, player, onBoardAction)
 
     result match {
       case Valid(moveResult) =>

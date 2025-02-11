@@ -3,6 +3,7 @@ package com.shogi8017.app.services.logics
 import com.shogi8017.app.exceptions.{IllegalMove, IncorrectPromotionScenario}
 import com.shogi8017.app.services.logics.LogicTestUtils.*
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.actions.{DropAction, MoveAction}
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.ROOK
 import com.shogi8017.app.services.logics.pieces.{Knight, PromotedRook, Rook}
 import com.shogi8017.app.utils.Multiset
@@ -16,15 +17,15 @@ class RookTest extends AnyFunSuite:
         Position(3, 3) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
-
-    val testSeqWhite = (1 to 9).filter(_ != 4)
-    testSeqWhite.foreach(col => testAction(WHITE_PLAYER, MoveAction(Position(4, 4), Position(4, col)), Rook(WHITE_PLAYER), s0))
-    testSeqWhite.foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(4, 4), Position(row, 4)), Rook(WHITE_PLAYER), s0))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     val testSeqBlack = (1 to 9).filter(_ != 3)
-    testSeqBlack.foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(3, 3), Position(3, col)), Rook(BLACK_PLAYER), s1))
-    testSeqBlack.foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(3, 3), Position(row, 3)), Rook(BLACK_PLAYER), s1))
+    testSeqBlack.foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(3, 3), Position(3, col)), Rook(BLACK_PLAYER), s0))
+    testSeqBlack.foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(3, 3), Position(row, 3)), Rook(BLACK_PLAYER), s0))
+
+    val testSeqWhite = (1 to 9).filter(_ != 4)
+    testSeqWhite.foreach(col => testAction(WHITE_PLAYER, MoveAction(Position(4, 4), Position(4, col)), Rook(WHITE_PLAYER), s1))
+    testSeqWhite.foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(4, 4), Position(row, 4)), Rook(WHITE_PLAYER), s1))
   }
 
   test("A rook should not move diagonally") {
@@ -34,13 +35,13 @@ class RookTest extends AnyFunSuite:
         Position(4, 6) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
-
-    val testSeqWhite = (1 to 9).filterNot(_ == 6).map(i => Position(i, i))
-    testSeqWhite.foreach(pos => testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), pos), IllegalMove, s0))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     val testSeqBlack = (1 to 9).map(i => Position(i, 10 - i)).filterNot(_ == Position(4, 6))
-    testSeqBlack.foreach(pos => testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), pos), IllegalMove, s1))
+    testSeqBlack.foreach(pos => testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), pos), IllegalMove, s0))
+
+    val testSeqWhite = (1 to 9).filterNot(_ == 6).map(i => Position(i, i))
+    testSeqWhite.foreach(pos => testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), pos), IllegalMove, s1))
   }
 
 
@@ -51,18 +52,18 @@ class RookTest extends AnyFunSuite:
         Position(4, 6) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     val allPositions = for {
       row <- 1 to 9
       col <- 1 to 9
     } yield Position(row, col)
 
-    val testSeqWhite = allPositions.filterNot(pos => pos.x == 6 || pos.y == 6)
-    testSeqWhite.foreach(pos => testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), pos), IllegalMove, s0))
-
     val testSeqBlack = allPositions.filterNot(pos => pos.x == 4 || pos.y == 6)
-    testSeqBlack.foreach(pos => testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), pos), IllegalMove, s1))
+    testSeqBlack.foreach(pos => testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), pos), IllegalMove, s0))
+
+    val testSeqWhite = allPositions.filterNot(pos => pos.x == 6 || pos.y == 6)
+    testSeqWhite.foreach(pos => testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), pos), IllegalMove, s1))
   }
 
   test("A rook should be able to jump") {
@@ -72,10 +73,10 @@ class RookTest extends AnyFunSuite:
         Position(4, 6) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
-    testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(3, 6)), IllegalMove, s0)
-    testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(8, 6)), IllegalMove, s1)
+    testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(8, 6)), IllegalMove, s0)
+    testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(3, 6)), IllegalMove, s1)
   }
 
   test("A rook should capture like a cross") {
@@ -85,17 +86,17 @@ class RookTest extends AnyFunSuite:
         Position(4, 6) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
-    val r1 = testAction(WHITE_PLAYER, MoveAction(Position(6, 6), Position(4, 6)), Rook(WHITE_PLAYER), s0)
+    val r0 = testAction(BLACK_PLAYER, MoveAction(Position(4, 6), Position(6, 6)), Rook(BLACK_PLAYER), s0)
+    assert(r0.piecesMap.size == 3)
+    assert(r0.hands.get(BLACK_PLAYER).contains(Multiset(ROOK)))
+    assert(r0.hands.get(WHITE_PLAYER).contains(Multiset.empty))
+
+    val r1 = testAction(WHITE_PLAYER, MoveAction(Position(6, 6), Position(4, 6)), Rook(WHITE_PLAYER), s1)
     assert(r1.piecesMap.size == 3)
     assert(r1.hands.get(WHITE_PLAYER).contains(Multiset(ROOK)))
     assert(r1.hands.get(BLACK_PLAYER).contains(Multiset.empty))
-
-    val r2 = testAction(BLACK_PLAYER, MoveAction(Position(4, 6), Position(6, 6)), Rook(BLACK_PLAYER), s1)
-    assert(r2.piecesMap.size == 3)
-    assert(r2.hands.get(BLACK_PLAYER).contains(Multiset(ROOK)))
-    assert(r2.hands.get(WHITE_PLAYER).contains(Multiset.empty))
   }
 
   test("A rook should not capture a piece of its own side") {
@@ -107,10 +108,10 @@ class RookTest extends AnyFunSuite:
         Position(2, 6) -> Knight(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
-    testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(6, 7)), IllegalMove, s0)
-    testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(2, 6)), IllegalMove, s1)
+    testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(2, 6)), IllegalMove, s0)
+    testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(6, 7)), IllegalMove, s1)
   }
 
   test("A rook should not capture like something else") {
@@ -120,10 +121,10 @@ class RookTest extends AnyFunSuite:
         Position(2, 2) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
-    testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(2, 2)), IllegalMove, s0)
-    testActionError(BLACK_PLAYER, MoveAction(Position(2, 2), Position(6, 6)), IllegalMove, s1)
+    testActionError(BLACK_PLAYER, MoveAction(Position(2, 2), Position(6, 6)), IllegalMove, s0)
+    testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(2, 2)), IllegalMove, s1)
   }
 
   test("Rook should be able to promote when reaching or leaving the last three ranks") {
@@ -135,19 +136,19 @@ class RookTest extends AnyFunSuite:
         Position(4, 2) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
-    (7 to 9).foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(1, 1), Position(1, row), false), Rook(WHITE_PLAYER), s0))
-    (7 to 9).foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(1, 1), Position(1, row), true),  PromotedRook(WHITE_PLAYER), s0))
+    (1 to 3).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(3, 9), Position(3, row), false), Rook(BLACK_PLAYER), s0))
+    (1 to 3).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(3, 9), Position(3, row), true),  PromotedRook(BLACK_PLAYER), s0))
 
-    (1 to 7).foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(2, 8), Position(2, row), false), Rook(WHITE_PLAYER), s0))
-    (1 to 7).foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(2, 8), Position(2, row), true),  PromotedRook(WHITE_PLAYER), s0))
+    (3 to 9).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(4, 2), Position(4, row), false), Rook(BLACK_PLAYER), s0))
+    (3 to 9).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(4, 2), Position(4, row), true),  PromotedRook(BLACK_PLAYER), s0))
 
-    (1 to 3).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(3, 9), Position(3, row), false), Rook(BLACK_PLAYER), s1))
-    (1 to 3).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(3, 9), Position(3, row), true),  PromotedRook(BLACK_PLAYER), s1))
+    (7 to 9).foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(1, 1), Position(1, row), false), Rook(WHITE_PLAYER), s1))
+    (7 to 9).foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(1, 1), Position(1, row), true),  PromotedRook(WHITE_PLAYER), s1))
 
-    (3 to 9).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(4, 2), Position(4, row), false), Rook(BLACK_PLAYER), s1))
-    (3 to 9).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(4, 2), Position(4, row), true),  PromotedRook(BLACK_PLAYER), s1))
+    (1 to 7).foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(2, 8), Position(2, row), false), Rook(WHITE_PLAYER), s1))
+    (1 to 7).foreach(row => testAction(WHITE_PLAYER, MoveAction(Position(2, 8), Position(2, row), true),  PromotedRook(WHITE_PLAYER), s1))
   }
 
   test("Rook cannot promote outside the last three rank") {
@@ -157,12 +158,12 @@ class RookTest extends AnyFunSuite:
         Position(9, 4) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
-    (2 to 9).foreach(col => testActionError(WHITE_PLAYER, MoveAction(Position(1, 6), Position(col, 6), true), IncorrectPromotionScenario, s0))
-    (1 to 5).foreach(row => testActionError(WHITE_PLAYER, MoveAction(Position(1, 6), Position(1, row), true), IncorrectPromotionScenario, s0))
-    (1 to 8).foreach(col => testActionError(BLACK_PLAYER, MoveAction(Position(9, 4), Position(col, 4), true), IncorrectPromotionScenario, s1))
-    (5 to 9).foreach(row => testActionError(BLACK_PLAYER, MoveAction(Position(9, 4), Position(9, row), true), IncorrectPromotionScenario, s1))
+    (1 to 8).foreach(col => testActionError(BLACK_PLAYER, MoveAction(Position(9, 4), Position(col, 4), true), IncorrectPromotionScenario, s0))
+    (5 to 9).foreach(row => testActionError(BLACK_PLAYER, MoveAction(Position(9, 4), Position(9, row), true), IncorrectPromotionScenario, s0))
+    (2 to 9).foreach(col => testActionError(WHITE_PLAYER, MoveAction(Position(1, 6), Position(col, 6), true), IncorrectPromotionScenario, s1))
+    (1 to 5).foreach(row => testActionError(WHITE_PLAYER, MoveAction(Position(1, 6), Position(1, row), true), IncorrectPromotionScenario, s1))
   }
 
 //  test("Rook must be able to return `getAllPossibleMoves` correctly") {
@@ -197,7 +198,7 @@ class RookTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(ROOK)
       )
     )
-    val s1 = s0.copy(lastAction = Some(Action(WHITE_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
   
     val allPositions = for {
       row <- 1 to 9
@@ -205,18 +206,18 @@ class RookTest extends AnyFunSuite:
     } yield Position(row, col)
   
     val allDroppablePosition = allPositions.filterNot(s0.piecesMap.contains)
-  
+
     allDroppablePosition.foreach(pos => {
-      val r0 = testAction(WHITE_PLAYER, DropAction(pos, ROOK), Rook(WHITE_PLAYER), s0)
+      val r0 = testAction(BLACK_PLAYER, DropAction(pos, ROOK), Rook(BLACK_PLAYER), s0)
       assert(r0.piecesMap.size == 3)
-      assert(r0.hands.get(WHITE_PLAYER).contains(Multiset.empty))
-      assert(r0.hands.get(BLACK_PLAYER).contains(Multiset(ROOK)))
+      assert(r0.hands.get(WHITE_PLAYER).contains(Multiset(ROOK)))
+      assert(r0.hands.get(BLACK_PLAYER).contains(Multiset.empty))
     })
-  
+
     allDroppablePosition.foreach(pos => {
-      val r1 = testAction(BLACK_PLAYER, DropAction(pos, ROOK), Rook(BLACK_PLAYER), s1)
+      val r1 = testAction(WHITE_PLAYER, DropAction(pos, ROOK), Rook(WHITE_PLAYER), s1)
       assert(r1.piecesMap.size == 3)
-      assert(r1.hands.get(WHITE_PLAYER).contains(Multiset(ROOK)))
-      assert(r1.hands.get(BLACK_PLAYER).contains(Multiset.empty))
+      assert(r1.hands.get(WHITE_PLAYER).contains(Multiset.empty))
+      assert(r1.hands.get(BLACK_PLAYER).contains(Multiset(ROOK)))
     })
   }

@@ -1,12 +1,12 @@
 package com.shogi8017.app.services.logics
 
 import cats.data.Validated.Valid
-import com.shogi8017.app.errors.{IllegalMove, NotOwnerOfPiece, OutOfTurn}
-import com.shogi8017.app.services.logics.Board.executeMove
 import com.shogi8017.app.exceptions.{IllegalMove, NotOwnerOfPiece, OutOfTurn}
+import com.shogi8017.app.services.logics.Board.executeOnBoardAction
 import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE}
 import com.shogi8017.app.services.logics.LogicTestUtils.{testAction, testActionError}
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.actions.{DropAction, MoveAction}
 import com.shogi8017.app.services.logics.pieces.*
 import com.shogi8017.app.services.logics.pieces.PieceType.*
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.*
@@ -49,8 +49,9 @@ class BoardTest extends AnyFunSuite {
         Position(1, 8) -> Rook(BLACK_PLAYER),
       ),
     )
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
-    testActionError(WHITE_PLAYER, MoveAction(Position(1, 8), Position(2, 8)), NotOwnerOfPiece, s0)
+    testActionError(WHITE_PLAYER, MoveAction(Position(1, 8), Position(2, 8)), NotOwnerOfPiece, s1)
   }
 
   test("A player should not be able to move when it's not their turn") {
@@ -60,9 +61,9 @@ class BoardTest extends AnyFunSuite {
         Position(1, 8) -> Rook(BLACK_PLAYER),
       ),
       hands = Map(WHITE_PLAYER -> Multiset(PAWN), BLACK_PLAYER -> Multiset(PAWN)),
-      lastAction = Some(Action(WHITE_PLAYER))
+      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
     )
-    val s1 = s0.copy(lastAction = Some(Action(BLACK_PLAYER)))
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
     testActionError(WHITE_PLAYER, MoveAction(Position(1, 3), Position(1, 7)), OutOfTurn, s0)
     testActionError(WHITE_PLAYER, DropAction(Position(1, 7), PAWN), OutOfTurn, s0)
@@ -162,7 +163,7 @@ class BoardTest extends AnyFunSuite {
         Position(7,2) -> Rook(BLACK_PLAYER),
         Position(8,8) -> Rook(BLACK_PLAYER)
       ),
-      lastAction = Some(Action(WHITE_PLAYER))
+      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
     )
 
     //  a b c d e f g h i
@@ -176,7 +177,7 @@ class BoardTest extends AnyFunSuite {
     //2 . . . . . . r . .
     //1 K . . . . . . . .
 
-    executeMove(s0, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1))) match {
+    executeOnBoardAction(s0, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1))) match {
       case Valid((_, _, _, gameEvent)) =>
         gameEvent match {
           case Some(CHECKMATE) => ()
@@ -194,8 +195,9 @@ class BoardTest extends AnyFunSuite {
         Position(5,8) -> Rook(BLACK_PLAYER),
       ),
     )
+    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
 
-    testActionError(WHITE_PLAYER, MoveAction(Position(5, 3), Position(4, 3)), IllegalMove, s0)
+    testActionError(WHITE_PLAYER, MoveAction(Position(5, 3), Position(4, 3)), IllegalMove, s1)
   }
 
   test("False-Checkmate test 1") {
@@ -207,7 +209,7 @@ class BoardTest extends AnyFunSuite {
         Position(7,2) -> Rook(BLACK_PLAYER),
         Position(8,8) -> Rook(BLACK_PLAYER),
       ),
-      lastAction = Some(Action(WHITE_PLAYER))
+      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
     )
 
     //  a b c d e f g h i
@@ -221,7 +223,7 @@ class BoardTest extends AnyFunSuite {
     //2 . . . . . . r . .
     //1 K . . . . . . . .
 
-    executeMove(s0, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1))) match {
+    executeOnBoardAction(s0, BLACK_PLAYER, MoveAction(Position(8, 8), Position(8, 1))) match {
       case Valid((s1, _, _, gameEvent)) =>
         gameEvent match {
           case Some(CHECK) => testAction(WHITE_PLAYER, MoveAction(Position(2, 7), Position(2, 1)), Rook(WHITE_PLAYER), s1)
@@ -241,7 +243,7 @@ class BoardTest extends AnyFunSuite {
         Position(7,2) -> Rook(BLACK_PLAYER),
         Position(8,6) -> Rook(BLACK_PLAYER),
       ),
-      lastAction = Some(Action(WHITE_PLAYER))
+      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
     )
 
     //  a b c d e f g h i
@@ -255,7 +257,7 @@ class BoardTest extends AnyFunSuite {
     //2 . . . . . . r . B
     //1 K . . . . . . . .
 
-    executeMove(s0, BLACK_PLAYER, MoveAction(Position(8, 6), Position(8, 1))) match {
+    executeOnBoardAction(s0, BLACK_PLAYER, MoveAction(Position(8, 6), Position(8, 1))) match {
       case Valid((s1, _, _, gameEvent)) =>
         gameEvent match {
           case Some(CHECK) => testAction(WHITE_PLAYER, MoveAction(Position(9, 2), Position(8, 1)), Bishop(WHITE_PLAYER), s1)
@@ -275,7 +277,7 @@ class BoardTest extends AnyFunSuite {
         Position(8,6) -> Rook(BLACK_PLAYER),
       ),
       hands = Map(WHITE_PLAYER -> Multiset(KNIGHT), BLACK_PLAYER -> Multiset.empty),
-      lastAction = Some(Action(WHITE_PLAYER))
+      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
     )
 
     //  a b c d e f g h i
@@ -289,7 +291,7 @@ class BoardTest extends AnyFunSuite {
     //2 . . . . . . r . .
     //1 K . . . . . . . .
 
-    executeMove(s0, BLACK_PLAYER, MoveAction(Position(8, 6), Position(8, 1))) match {
+    executeOnBoardAction(s0, BLACK_PLAYER, MoveAction(Position(8, 6), Position(8, 1))) match {
       case Valid((s1, _, _, gameEvent)) =>
         gameEvent match {
           case Some(CHECK) => testAction(WHITE_PLAYER, DropAction(Position(2, 1), KNIGHT), Knight(WHITE_PLAYER), s1)
