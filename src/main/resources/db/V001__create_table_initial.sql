@@ -16,17 +16,19 @@ CREATE TABLE `boards` (
 
 CREATE TABLE `games` (
     `gameId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    `gameCertificate` CHAR(36) NOT NULL UNIQUE,
     `boardId` CHAR(36) NOT NULL,
-    `whiteUserId` CHAR(36),
-    `blackUserId` CHAR(36),
+    `whiteUserId` CHAR(36) NOT NULL,
+    `blackUserId` CHAR(36) NOT NULL,
     `winner` ENUM('WHITE', 'BLACK', 'DRAW') NULL,
     `gameState` ENUM('PENDING', 'ON_GOING', 'FINISHED') NOT NULL,
     `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`boardId`) REFERENCES `boards`(`boardId`) ON DELETE CASCADE,
-    FOREIGN KEY (`whiteUserId`) REFERENCES `users`(`userId`) ON DELETE SET NULL,
-    FOREIGN KEY (`blackUserId`) REFERENCES `users`(`userId`) ON DELETE SET NULL,
+    FOREIGN KEY (`whiteUserId`) REFERENCES `users`(`userId`),
+    FOREIGN KEY (`blackUserId`) REFERENCES `users`(`userId`),
     INDEX `idx_gameId` (`gameId`),
+    INDEX `idx_gameCertificate` (`gameCertificate`),
     INDEX `idx_boardId` (`boardId`),
     INDEX `idx_whiteUserId` (`whiteUserId`),
     INDEX `idx_blackUserId` (`blackUserId`)
@@ -34,27 +36,31 @@ CREATE TABLE `games` (
 
 CREATE TABLE `invitations` (
     `invitationId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    `gameId` CHAR(36) NOT NULL,
+    `gameCertificate` CHAR(36) NOT NULL UNIQUE,
+    `whitePlayerId` CHAR(36) NOT NULL,
+    `blackPlayerId` CHAR(36) NOT NULL,
     `hasWhiteAccepted` BOOLEAN NOT NULL DEFAULT FALSE,
     `hasBlackAccepted` BOOLEAN NOT NULL DEFAULT FALSE,
     `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`gameId`) REFERENCES `games`(`gameId`) ON DELETE CASCADE
+    INDEX `idx_gameCertificate` (`gameCertificate`)
 );
 
 CREATE TABLE `boardHistories` (
     `boardHistoryId` CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     `boardId` CHAR(36) NOT NULL,
-    `moveNumber` INT NOT NULL,
-    `moveFromX` INT NOT NULL,
-    `moveFromY` INT NOT NULL,
-    `moveToX` INT NOT NULL,
-    `moveToY` INT NOT NULL,
-    `promoteTo` ENUM('QUEEN', 'ROOK', 'BISHOP', 'KNIGHT'),
-    `player` ENUM('WHITE', 'BLACK') NOT NULL,
+    `actionType` ENUM('MOVE', 'DROP', 'RESIGN') NOT NULL,
+    `actionNumber` INT NOT NULL,
+    `fromX` INT, -- not null for MOVE, null for DROP and RESIGN
+    `fromY` INT,-- not null for MOVE, null for DROP and RESIGN
+    `dropType` ENUM('ROOK', 'BISHOP', 'LANCE', 'KNIGHT', 'SILVER', 'GOLD', 'PAWN') NULL, -- not null for DROP, null for MOVE and RESIGN
+    `toX` INT, -- not null for MOVE and DROP, null for RESIGN
+    `toY` INT, -- not null for MOVE and DROP, null for RESIGN
+    `toPromote` BOOLEAN NOT NULL,
+    `player` ENUM('WHITE_PLAYER', 'BLACK_PLAYER') NOT NULL,
     `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`boardId`) REFERENCES `boards`(`boardId`) ON DELETE CASCADE,
     INDEX `idx_boardId` (`boardId`),
-    INDEX `idx_moveNumber` (`moveNumber`)
+    INDEX `idx_moveNumber` (`actionNumber`)
 );
