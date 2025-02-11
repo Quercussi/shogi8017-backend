@@ -165,8 +165,6 @@ object Board {
       }
     }
 
-    // TODO: handle resignation
-    
     validateGameState(player)
       .andThen(_ => validateOnBoardAction(player, onBoardAction))
       .andThen(_ => validatePieceExistenceAndOwnership(player, onBoardAction))
@@ -181,7 +179,7 @@ object Board {
     val newBoard = board.copy(
       auxiliaryState = board.auxiliaryState.copy(gameWinner = Some(winner))
     )
-    Valid((board, List.empty, algebraicNotation, gameEvent))
+    Valid((newBoard, List.empty, algebraicNotation, gameEvent))
   }
 
   private def isOutOfTurn(lastAction: Option[Actor], currentPlayer: Player): Boolean =
