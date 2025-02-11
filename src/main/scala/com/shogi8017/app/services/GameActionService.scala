@@ -97,25 +97,37 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
     val requestingUser = request.context.user
     val requestingUserId = requestingUser.userId
 
-    val invitationEitherT = for {
-      invitation <- getInvitation(gameCertificate)
-      newInvitation <- EitherT.fromEither[IO](
-        if (invitation.blackPlayerId == requestingUserId)
-          Right(invitation.copy(hasBlackAccepted = true))
-        else if (invitation.whitePlayerId == requestingUserId)
-          Right(invitation.copy(hasWhiteAccepted = true))
-        else
-          Left(UserNotInvited)
-      )
-      _ <- updateInvitation(newInvitation)
+    def isInvitationComplete(invitation: InvitationModel): Boolean =
+      invitation.hasBlackAccepted && invitation.hasWhiteAccepted
 
-      hasGameCreated <- if (newInvitation.hasWhiteAccepted && newInvitation.hasBlackAccepted) {
-        createGame(gameCertificate, newInvitation.whitePlayerId, newInvitation.blackPlayerId).map(_ => true)
-      } else {
+    def updateInvitationStatus(invitation: InvitationModel, requestingUserId: String): Either[Throwable, InvitationModel] =
+      if (invitation.blackPlayerId == requestingUserId)
+        Right(invitation.copy(hasBlackAccepted = true))
+      else if (invitation.whitePlayerId == requestingUserId)
+        Right(invitation.copy(hasWhiteAccepted = true))
+      else
+        Left(UserNotInvited)
+
+    def createGameIfReady(invitation: InvitationModel, gameCertificate: String): EitherT[IO, Throwable, Boolean] =
+      if (isInvitationComplete(invitation))
+        createGame(gameCertificate, invitation.whitePlayerId, invitation.blackPlayerId).map(_ => true)
+      else
         EitherT.pure[IO, Throwable](false)
-      }
 
-    } yield (invitation, hasGameCreated)
+    def processInvitation(invitation: InvitationModel, requestingUserId: String, gameCertificate: String): EitherT[IO, Throwable, (InvitationModel, Boolean)] =
+      for {
+        updatedInvitation <- EitherT.fromEither[IO](updateInvitationStatus(invitation, requestingUserId))
+        _ <- updateInvitation(updatedInvitation)
+        hasGameCreated <- createGameIfReady(updatedInvitation, gameCertificate)
+      } yield (updatedInvitation, hasGameCreated)
+
+    val invitationEitherT: EitherT[IO, Throwable, (InvitationModel, Boolean)] = for {
+      invitation <- getInvitation(gameCertificate)
+      result <- if (isInvitationComplete(invitation))
+        EitherT.rightT[IO, Throwable]((invitation, false))
+      else
+        processInvitation(invitation, requestingUserId, gameCertificate)
+    } yield result
 
     invitationEitherT.value.flatMap {
       case Right((invitation, true)) =>
@@ -291,7 +303,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
           executionAction.player
         )
 
-      case ResignRequest() =>
+      case ResignAction() =>
         CreateBoardHistoryPayload(
           boardId,
           moveNumber,
