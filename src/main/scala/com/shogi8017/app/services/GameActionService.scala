@@ -52,7 +52,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
   }
 
   private def pingingStream(clientRegistry: TrieMap[String, Topic[IO, GameActionEvent]]) = {
-    val repetition = 30.seconds
+    val repetition = 10.seconds
     Stream
       .awakeEvery[IO](repetition)
       .evalMap { _ =>
@@ -97,6 +97,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
     val requestingUser = request.context.user
     val requestingUserId = requestingUser.userId
 
+
     def isInvitationComplete(invitation: InvitationModel): Boolean =
       invitation.hasBlackAccepted && invitation.hasWhiteAccepted
 
@@ -121,6 +122,25 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
         hasGameCreated <- createGameIfReady(updatedInvitation, gameCertificate)
       } yield (updatedInvitation, hasGameCreated)
 
+    def notifyPlayersBoardConfiguration(invitation: InvitationModel, recipients: List[String]): IO[Unit] = {
+      (for {
+        whiteUser <- getUser(invitation.whitePlayerId)
+        blackUser <- getUser(invitation.blackPlayerId)
+        payload = Board.convertToBoardConfigurationEvent(
+          Board.defaultInitialPosition,
+          whiteUser,
+          blackUser
+        )
+      } yield payload).value.flatMap {
+        case Right(payload) =>
+          recipients.traverse_ { userId =>
+            publishToTopic(userId, clientRegistry, payload)
+          }
+        case Left(error) =>
+          publishToTopic(requestingUserId, clientRegistry, InvalidGameActionEvent(error.toString))
+      }
+    }
+
     val invitationEitherT: EitherT[IO, Throwable, (InvitationModel, Boolean)] = for {
       invitation <- getInvitation(gameCertificate)
       result <- if (isInvitationComplete(invitation))
@@ -131,23 +151,9 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
 
     invitationEitherT.value.flatMap {
       case Right((invitation, true)) =>
-        (for {
-          whiteUser <- getUser(invitation.whitePlayerId)
-          blackUser <- getUser(invitation.blackPlayerId)
-          payload = Board.convertToBoardConfigurationEvent(
-            Board.defaultInitialPosition,
-            whiteUser,
-            blackUser
-          )
-        } yield payload).value.flatMap {
-          case Right(payload) =>
-            publishToTopic(invitation.whitePlayerId, clientRegistry, payload) *>
-              publishToTopic(invitation.blackPlayerId, clientRegistry, payload)
-          case Left(error) =>
-            publishToTopic(requestingUserId, clientRegistry, InvalidGameActionEvent(error.toString))
-        }
-      case Right((_, false)) =>
-        IO.unit
+        notifyPlayersBoardConfiguration(invitation, List(invitation.whitePlayerId, invitation.blackPlayerId))
+      case Right((invitation, false)) =>
+        notifyPlayersBoardConfiguration(invitation, List(requestingUserId))
       case Left(error) =>
         publishToTopic(requestingUserId, clientRegistry, InvalidGameActionEvent(error.toString))
     }
@@ -271,7 +277,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
     )
 
   private def getExecutionHistories(game: GameModel): EitherT[IO, Throwable, List[BoardHistoryModel]] =
-    EitherT(boardHistoryRepository.getBoardHistories(GetGameHistoriesPayload(game.boardId)))
+    EitherT(boardHistoryRepository.getBoardHistories(GetBoardHistoriesPayload(game.boardId)))
 
   private def createExecutionHistories(boardId: String, executionAction: ExecutionAction, moveNumber: Int): EitherT[IO, Throwable, BoardHistoryModel] =
     val payload = executionAction.playerAction match {
