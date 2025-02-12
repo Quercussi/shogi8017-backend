@@ -33,7 +33,7 @@ class InvitationService(invitationRepository: InvitationRepository) {
   }
 
   private def pingingStream(clientRegistry: TrieMap[String, Topic[IO, InvitationEvent]]) = {
-    val repetition = 30.seconds
+    val repetition = 10.seconds
     Stream
       .awakeEvery[IO](repetition)
       .evalMap { _ =>
