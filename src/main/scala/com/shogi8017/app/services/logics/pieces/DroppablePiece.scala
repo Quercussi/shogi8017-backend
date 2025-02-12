@@ -8,6 +8,7 @@ import com.shogi8017.app.services.logics.BoardActionEnumerators.*
 import com.shogi8017.app.services.logics.actions.DropAction
 
 trait DroppablePiece extends Piece {
+
   def getBoardTransitionOnDrop(board: Board, drop: DropAction): Validated[ActionValidationException, BoardTransition] = {
     if(additionalDropValidation(board: Board, drop: DropAction)) {
       defaultGetBoardTransitionOnDrop(board, drop)
@@ -39,5 +40,18 @@ trait DroppablePiece extends Piece {
       case promotablePieceType: PromotablePieceType => additionalDropValidation(board, DropAction(position, promotablePieceType))
       case _ => false
     }
+  }
+
+  def hasLegalDrop(board: Board): Boolean = {
+    val allBoardPosition = {
+      for {
+        x <- 1 to 9
+        y <- 1 to 9
+      } yield Position(x, y)
+    }
+
+    val allEmptyPositions = getEmptyPositions(board) -- board.piecesMap.keySet
+
+    allEmptyPositions.exists(pos => getBoardTransitionOnDrop(board, DropAction(pos, this.pieceType)).isValid)
   }
 }

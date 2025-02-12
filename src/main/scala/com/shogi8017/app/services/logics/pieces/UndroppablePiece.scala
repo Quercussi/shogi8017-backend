@@ -8,4 +8,6 @@ import com.shogi8017.app.services.logics.{Board, BoardTransition}
 
 trait UndroppablePiece extends Piece {
   def getBoardTransitionOnDrop(board: Board, drop: DropAction): Validated[ActionValidationException, BoardTransition] = Invalid(IllegalDrop)
+
+  def hasLegalDrop(board: Board): Boolean = false
 }

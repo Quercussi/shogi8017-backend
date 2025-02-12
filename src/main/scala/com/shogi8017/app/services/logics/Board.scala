@@ -193,11 +193,11 @@ object Board {
       case None => currentPlayer == WHITE_PLAYER
       case Some(lastAction) => lastAction.player == currentPlayer
 
-  // TODO: check impasse
   private def isStalemate(board: Board, player: Player): Boolean = {
-    !isChecked(board, player) && !forallPlayerPieces(board, player) { (position, piece) =>
-      piece.hasLegalMoves(board, position)
-    }
+    !isChecked(board, player) && !(
+      existsPlayerHands(board, player) { piece => piece.hasLegalDrop(board) } ||
+      existsPlayerPieces(board, player) { (position, piece) =>piece.hasLegalMoves(board, position) }
+    )
   }
 
   private def isDeadPosition(board: Board): Boolean = {

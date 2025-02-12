@@ -10,10 +10,14 @@ import com.shogi8017.app.services.logics.actions.{DropAction, MoveAction, OnBoar
 trait Piece() {
   val owner: Player
 
+  def score: Int
+  
   def pieceType: PieceType
 
   def hasLegalMoves(board: Board, from: Position): Boolean
 
+  def hasLegalDrop(board: Board): Boolean
+  
   def getBoardTransitionOnMove(board: Board, move: MoveAction): Validated[ActionValidationException, BoardTransition]
 
   def getBoardTransitionOnDrop(board: Board, drop: DropAction): Validated[ActionValidationException, BoardTransition]
