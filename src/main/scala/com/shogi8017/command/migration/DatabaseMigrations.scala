@@ -3,8 +3,8 @@ package com.shogi8017.command.migration
 import cats.effect.*
 import com.shogi8017.app.{AppConfig, DatabaseConfig}
 import com.typesafe.scalalogging.LazyLogging
-import fly4s.*
-import fly4s.data.*
+import fly4s.Fly4s
+import fly4s.data.{Fly4sConfig, Locations}
 
 object DatabaseMigrations extends LazyLogging {
   

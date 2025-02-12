@@ -1,12 +1,13 @@
 package com.shogi8017.app.repository
 
 import cats.effect.IO
+import cats.effect.std.UUIDGen
 import com.shogi8017.app.models.BoardHistoryModel
 import doobie.*
 import doobie.implicits.*
 
 class BoardHistoryRepository(trx: Transactor[IO]) {
-  def getBoardHistories(payload: GetGameHistoriesPayload): IO[Either[Throwable, List[BoardHistoryModel]]] = {
+  def getBoardHistories(payload: GetBoardHistoriesPayload): IO[Either[Throwable, List[BoardHistoryModel]]] = {
     (for {
       result <- (for {
         gameHistories <- sql"""
@@ -20,21 +21,21 @@ class BoardHistoryRepository(trx: Transactor[IO]) {
   }
 
   def createBoardHistory(payload: CreateBoardHistoryPayload): IO[Either[Throwable, BoardHistoryModel]] = {
-    val uuid = "test" // TODO: generate uuid;
     for {
+      boardHistoryUuid <- UUIDGen[IO].randomUUID.map(_.toString)
       result <- sql"""
         INSERT INTO boardHistories (
-          boardId, actionNumber, actionType,
+          boardHistoryId, boardId, actionNumber, actionType,
           fromX, fromY, toX, toY, dropType, toPromote, player
         ) VALUES (
-          ${payload.boardId}, ${payload.actionNumber}, ${payload.actionType},
+          $boardHistoryUuid, ${payload.boardId}, ${payload.actionNumber}, ${payload.actionType},
           ${payload.fromX}, ${payload.fromY}, ${payload.toX}, ${payload.toY},
           ${payload.dropType}, ${payload.toPromote}, ${payload.player}
         )
       """.update.run.transact(trx).attempt
     } yield result match {
       case Right(_) => Right(BoardHistoryModel(
-        uuid,
+        boardHistoryUuid,
         payload.boardId,
         payload.actionType,
         payload.actionNumber,
