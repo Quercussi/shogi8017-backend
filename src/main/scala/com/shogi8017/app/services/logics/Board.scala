@@ -140,12 +140,18 @@ object Board {
       moveExecution.andThen { (board, stateTransitionList, algebraicNotation) =>
         val gameEvent = checkGameEvent(board, movingPiece.owner)
 
+        val winnerCheckedBoard = gameEvent match
+          case Some(CHECKMATE) => board.copy(auxiliaryState = board.auxiliaryState.copy(gameWinner = Some(if (movingPiece.owner == WHITE_PLAYER) WHITE_WINNER else BLACK_WINNER)))
+          case Some(STALEMATE) | Some(DEAD_POSITION) => board.copy(auxiliaryState = board.auxiliaryState.copy(gameWinner = Some(GameWinner.DRAW)))
+          case _ => board
+
         val newAlgebraicNotation = gameEvent match
           case Some(CHECK) | Some(CHECKMATE) => algebraicNotation + (if gameEvent.contains(CHECK) then " +" else " #")
           case Some(STALEMATE) | Some(DEAD_POSITION) => algebraicNotation + " 1/2-1/2"
           case None => algebraicNotation
+          case _ => algebraicNotation
 
-        Valid((board, stateTransitionList, algebraicNotation, gameEvent))
+        Valid((winnerCheckedBoard, stateTransitionList, algebraicNotation, gameEvent))
       }
     }
 
