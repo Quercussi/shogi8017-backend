@@ -21,7 +21,6 @@ case class InvalidGameActionEvent(errorMessage: String) extends GameActionEvent
 
 case class ExecutionActionEvent(stateTransitionList: StateTransitionList, gameEvent: Option[GameEvent]) extends GameActionEvent
 
-// TODO: add user's player color 
 case class BoardConfigurationEvent(playerList: PlayerList, board: List[PositionPiecePair], handPieceCounts: List[PieceHandCount]) extends GameActionEvent
 case class PlayerList(whitePlayer: UserModel, blackPlayer: UserModel)
 case class PositionPiecePair(position: Position, piece: PieceType)
