@@ -7,5 +7,7 @@ case class PromotedKnight(owner: Player) extends Piece with UnitMovingPieceMetho
     PromotedPieceType.P_KNIGHT
   }
 
+  def score: Int = 1
+
   def unitDirections: List[Direction] = Gold.directions(this.owner)
 }

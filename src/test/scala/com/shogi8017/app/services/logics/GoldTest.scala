@@ -202,3 +202,8 @@ class GoldTest extends AnyFunSuite:
       assert(r0.hands.get(BLACK_PLAYER).contains(Multiset(GOLD)))
     })
   }
+  
+  test("Gold score should be 1") {
+    assert(Gold(WHITE_PLAYER).score == 1)
+    assert(Gold(BLACK_PLAYER).score == 1)
+  }

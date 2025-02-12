@@ -173,19 +173,21 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
     val requestingUserId = request.context.user.userId
     val resignAction = request.payload
 
-    case class ResignResultWithContestantsId(whiteId: String, blackId: String)
+    case class ResignResultWithContestantsId(whiteId: String, blackId: String, resigningPlayer: Player)
 
     val resignResult: EitherT[IO, Throwable, ResignResultWithContestantsId] = for {
       game <- getGame(gameCertificate)
-      player <- validatePlayer(game.whiteUserId, game.blackUserId, requestingUserId)
+      resigningPlayer <- validatePlayer(game.whiteUserId, game.blackUserId, requestingUserId)
       executionHistories <- getExecutionHistories(game)
       newMoveNumber = executionHistories.lastOption.fold(1)(_.actionNumber + 1)
-      _ <- createExecutionHistories(game.boardId, ExecutionAction(player, ResignAction()), newMoveNumber)
-    } yield ResignResultWithContestantsId(game.whiteUserId, game.blackUserId)
+      _ <- createExecutionHistories(game.boardId, ExecutionAction(resigningPlayer, ResignAction()), newMoveNumber)
+    } yield ResignResultWithContestantsId(game.whiteUserId, game.blackUserId, resigningPlayer)
 
+    
     resignResult.value.flatMap {
       case Right(result) =>
-        notifyContestants(List.empty, Some(RESIGNATION), result.whiteId, result.blackId, clientRegistry)
+        val gameEventWinnerPair = GameEventWinnerPair(Some(RESIGNATION), Some(toWinner(opponent(result.resigningPlayer))))
+        notifyContestants(List.empty, gameEventWinnerPair, result.whiteId, result.blackId, clientRegistry)
       case Left(error) =>
         publishToTopic(requestingUserId, clientRegistry, InvalidGameActionEvent(error.toString))
     }
@@ -230,7 +232,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
 
   private def notifyContestants(
    transitionList: StateTransitionList,
-   gameEvent: Option[GameEvent],
+   gameEvent: GameEventWinnerPair,
    whiteId: String,
    blackId: String,
    clientRegistry: GameActionAPIRegistry

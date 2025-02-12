@@ -206,3 +206,8 @@ class KingTest extends AnyFunSuite:
       testActionError(WHITE_PLAYER, DropAction(pos, KING), InvalidDropPiece, s1)
     })
   }
+  
+  test("King score should be 0") {
+    assert(King(WHITE_PLAYER).score == 0)
+    assert(King(BLACK_PLAYER).score == 0)
+  }

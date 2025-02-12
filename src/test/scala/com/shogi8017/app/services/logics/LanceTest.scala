@@ -222,3 +222,8 @@ class LanceTest extends AnyFunSuite:
       testActionError(WHITE_PLAYER, DropAction(pos, LANCE), IllegalDrop, s1)
     })
   }
+
+  test("Lance score should be 1") {
+    assert(Lance(WHITE_PLAYER).score == 1)
+    assert(Lance(BLACK_PLAYER).score == 1)
+  }

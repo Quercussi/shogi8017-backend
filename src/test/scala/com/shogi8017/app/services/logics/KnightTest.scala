@@ -200,3 +200,8 @@ class KnightTest extends AnyFunSuite:
       testActionError(WHITE_PLAYER, DropAction(pos, KNIGHT), IllegalDrop, s1)
     })
   }
+
+  test("Knight score should be 1") {
+    assert(Knight(WHITE_PLAYER).score == 1)
+    assert(Knight(BLACK_PLAYER).score == 1)
+  }

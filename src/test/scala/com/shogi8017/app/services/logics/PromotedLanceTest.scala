@@ -196,3 +196,8 @@ class PromotedLanceTest extends AnyFunSuite:
       testActionError(WHITE_PLAYER, DropAction(pos, P_LANCE), InvalidDropPiece, s1)
     })
   }
+
+  test("Promoted Lance score should be 1") {
+    assert(PromotedLance(WHITE_PLAYER).score == 1)
+    assert(PromotedLance(BLACK_PLAYER).score == 1)
+  }

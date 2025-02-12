@@ -198,3 +198,8 @@ class PromotedBishopTest extends AnyFunSuite:
       testActionError(WHITE_PLAYER, DropAction(pos, P_BISHOP), InvalidDropPiece, s1)
     })
   }
+  
+  test("Promoted Bishop score should be 5") {
+    assert(PromotedBishop(WHITE_PLAYER).score == 5)
+    assert(PromotedBishop(BLACK_PLAYER).score == 5)
+  }

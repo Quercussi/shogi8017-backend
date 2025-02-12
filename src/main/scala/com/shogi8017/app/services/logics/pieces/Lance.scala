@@ -11,6 +11,8 @@ case class Lance(owner: Player) extends Piece with RangedMovingPieceMethods with
     PromotablePieceType.LANCE
   }
 
+  def score: Int = 1
+  
   def rangedDirections: List[Direction] = Lance.directions(this.owner)
 
   override def additionalDropValidation(board: Board, drop: DropAction): Boolean = {

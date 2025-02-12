@@ -7,6 +7,8 @@ case class PromotedRook(owner: Player) extends Piece with HybridMovingPieceMetho
     PromotedPieceType.P_ROOK
   }
 
+  def score: Int = 5
+
   def unitDirections: List[Direction] = Bishop.directions
   def rangedDirections: List[Direction] = Rook.directions
 }

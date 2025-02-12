@@ -196,3 +196,8 @@ class PromotedPawnTest extends AnyFunSuite:
       testActionError(WHITE_PLAYER, DropAction(pos, P_PAWN), InvalidDropPiece, s1)
     })
   }
+
+  test("Promoted Pawn score should be 1") {
+    assert(PromotedPawn(WHITE_PLAYER).score == 1)
+    assert(PromotedPawn(BLACK_PLAYER).score == 1)
+  }

@@ -7,6 +7,8 @@ case class Rook(owner: Player) extends Piece with RangedMovingPieceMethods with 
     PromotablePieceType.ROOK
   }
 
+  def score: Int = 5
+
   def rangedDirections: List[Direction] = Rook.directions
 }
 

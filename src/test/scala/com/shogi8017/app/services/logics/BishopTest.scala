@@ -187,3 +187,8 @@ class BishopTest extends AnyFunSuite:
       assert(r0.hands.get(BLACK_PLAYER).contains(Multiset(BISHOP)))
     })
   }
+
+  test("Bishop score should be 5") {
+    assert(Bishop(WHITE_PLAYER).score == 5)
+    assert(Bishop(BLACK_PLAYER).score == 5)
+  }

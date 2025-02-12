@@ -9,5 +9,7 @@ case class PromotedPawn(owner: Player) extends Piece with UnitMovingPieceMethods
     PromotedPieceType.P_PAWN
   }
 
+  def score: Int = 1
+
   def unitDirections: List[Direction] = Gold.directions(this.owner)
 }

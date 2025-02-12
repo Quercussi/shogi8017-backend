@@ -196,3 +196,8 @@ class PromotedKnightTest extends AnyFunSuite:
       testActionError(WHITE_PLAYER, DropAction(pos, P_KNIGHT), InvalidDropPiece, s1)
     })
   }
+
+  test("Promoted Knight score should be 1") {
+    assert(PromotedKnight (WHITE_PLAYER).score == 1)
+    assert(PromotedKnight (BLACK_PLAYER).score == 1)
+  }

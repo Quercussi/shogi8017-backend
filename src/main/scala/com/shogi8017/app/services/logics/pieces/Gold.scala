@@ -7,6 +7,8 @@ case class Gold(owner: Player) extends Piece with UnitMovingPieceMethods with Dr
   def pieceType: PieceType = {
     UnPromotablePieceType.GOLD
   }
+  
+  def score: Int = 1
 
   def unitDirections: List[Direction] = Gold.directions(this.owner)
 }

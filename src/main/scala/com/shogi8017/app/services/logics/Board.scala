@@ -6,10 +6,10 @@ import cats.syntax.all.*
 import com.shogi8017.app.exceptions.*
 import com.shogi8017.app.models.UserModel
 import com.shogi8017.app.models.enumerators.GameWinner
-import com.shogi8017.app.models.enumerators.GameWinner.{BLACK_WINNER, WHITE_WINNER}
+import com.shogi8017.app.models.enumerators.GameWinner.{BLACK_WINNER, DRAW, WHITE_WINNER}
 import com.shogi8017.app.services.*
-import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE, DEAD_POSITION, STALEMATE}
-import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
+import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE, IMPASSE, RESIGNATION, STALEMATE}
+import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER, toWinner}
 import com.shogi8017.app.services.logics.actions.*
 import com.shogi8017.app.services.logics.pieces.*
 import com.shogi8017.app.services.logics.pieces.Piece.validateAndApplyAction
@@ -138,36 +138,33 @@ object Board {
     def processGameEvent(inputTuple: (Piece, Validated[GameValidationException, BoardStateTransition])): Validated[GameValidationException, MoveResult] = {
       val (movingPiece, moveExecution) = inputTuple
       moveExecution.andThen { (board, stateTransitionList, algebraicNotation) =>
-        val gameEvent = checkGameEvent(board, movingPiece.owner)
+        val event = checkGameEvent(board, movingPiece.owner)
 
-        val winnerCheckedBoard = gameEvent match
-          case Some(CHECKMATE) => board.copy(auxiliaryState = board.auxiliaryState.copy(gameWinner = Some(if (movingPiece.owner == WHITE_PLAYER) WHITE_WINNER else BLACK_WINNER)))
-          case Some(STALEMATE) | Some(DEAD_POSITION) => board.copy(auxiliaryState = board.auxiliaryState.copy(gameWinner = Some(GameWinner.DRAW)))
-          case _ => board
+        val winnerCheckedBoard = board.copy(auxiliaryState = board.auxiliaryState.copy(gameWinner = event.winner))
 
-        val newAlgebraicNotation = gameEvent match
-          case Some(CHECK) | Some(CHECKMATE) => algebraicNotation + (if gameEvent.contains(CHECK) then " +" else " #")
-          case Some(STALEMATE) | Some(DEAD_POSITION) => algebraicNotation + " 1/2-1/2"
+        val newAlgebraicNotation = event.gameEvent match
+          case Some(CHECK) | Some(CHECKMATE) => algebraicNotation + (if event.gameEvent.contains(CHECK) then " +" else " #")
+          case Some(STALEMATE) | Some(IMPASSE) => algebraicNotation + " 1/2-1/2"
           case None => algebraicNotation
           case _ => algebraicNotation
 
-        Valid((winnerCheckedBoard, stateTransitionList, algebraicNotation, gameEvent))
+        Valid((winnerCheckedBoard, stateTransitionList, algebraicNotation, event))
       }
     }
 
-    def checkGameEvent(board: Board, player: Player): Option[GameEvent] = {
+    def checkGameEvent(board: Board, player: Player): GameEventWinnerPair = {
       lazy val opponent = if (player == WHITE_PLAYER) BLACK_PLAYER else WHITE_PLAYER
       lazy val checked = isChecked(board, opponent)
       lazy val escape = hasEscape(board, opponent)
       lazy val stalemate = isStalemate(board, opponent)
-      lazy val deadPosition = isDeadPosition(board)
+      lazy val impasseWinner = isImpasse(board)
 
-      (checked, escape, stalemate, deadPosition) match {
-        case (true, true, _, _) => Some(CHECK)
-        case (true, false, _, _) => Some(CHECKMATE)
-        case (_, _, true, _) => Some(STALEMATE)
-        case (_, _, _, true) => Some(DEAD_POSITION)
-        case _ => None
+      (checked, escape, stalemate, impasseWinner) match {
+        case (true, true, _, _) =>      GameEventWinnerPair(Some(CHECK),      None)
+        case (true, false, _, _) =>     GameEventWinnerPair(Some(CHECKMATE),  Some(toWinner(player)))
+        case (_, _, true, _) =>         GameEventWinnerPair(Some(STALEMATE),  Some(DRAW))
+        case (_, _, _, Some(winner)) => GameEventWinnerPair(Some(IMPASSE),    Some(winner))
+        case _ =>                       GameEventWinnerPair(None,             None)
       }
     }
 
@@ -179,7 +176,7 @@ object Board {
 
   def executeResignAction(board: Board, player: Player, resignAction: ResignAction): Validated[GameValidationException, MoveResult] = {
     val winner: GameWinner = if (player == WHITE_PLAYER) WHITE_WINNER else BLACK_WINNER
-    val gameEvent = Some(GameEvent.RESIGNATION)
+    val gameEvent = GameEventWinnerPair(Some(RESIGNATION), Some(winner))
     val algebraicNotation = "1-0" // TODO: implement proper algebraic notation
 
     val newBoard = board.copy(
@@ -200,19 +197,25 @@ object Board {
     )
   }
 
-  private def isDeadPosition(board: Board): Boolean = {
-    val pieces = board.piecesMap.values.toList
+  private def isImpasse(board: Board): Option[GameWinner] = {
+    val whiteKingInZone = getKingPosition(board, WHITE_PLAYER).exists(_.y >= 7)
+    val blackKingInZone = getKingPosition(board, BLACK_PLAYER).exists(_.y <= 3)
 
-    // Case 1: Lance vs. Lance
-    def isKingVsKing: Boolean = pieces.forall(_.isInstanceOf[King])
-
-    // Case 2: Lance and bishop vs. Lance or Lance and knight vs. Lance
-    def isKingAndBishopVsKingOrKingAndKnightVsKing: Boolean = {
-      pieces.size == 3 && pieces.count(_.isInstanceOf[King]) == 2 &&
-        pieces.exists(p => p.isInstanceOf[Knight] || p.isInstanceOf[Bishop])
+    def countScore(player: Player): Int = {
+      val pieceScores = board.piecesMap.values.filter(_.owner == player).map(_.score).sum
+      val handScores = board.hands.getOrElse(player, Multiset.empty).elements.map {
+        case (pieceType, count) => getPieceByPieceType(pieceType, player).score * count
+      }.sum
+      pieceScores + handScores
     }
 
-    isKingVsKing || isKingAndBishopVsKingOrKingAndKnightVsKing
+
+    if (whiteKingInZone && blackKingInZone) {
+      if countScore(WHITE_PLAYER) > 30 then Some(WHITE_WINNER)
+      else if countScore(BLACK_PLAYER) > 30 then Some(BLACK_WINNER)
+      else Some(DRAW)
+    }
+    else None
   }
 
   def processAction(board: Board, actingPlayer: Player)(stateTransitionList: StateTransitionList): Board = {
@@ -293,14 +296,6 @@ object Board {
     board.hands.getOrElse(player, Multiset.empty).toSet
       .map(p => getPieceByPieceType(p, player))
       .exists(f)
-  }
-
-  private def forallPlayerPieces(board: Board, player: Player)(f: (Position, Piece) => Boolean): Boolean = {
-    board.piecesMap.filter {
-      case (position, piece) => piece.owner == player
-    }.forall {
-      case (position, piece) => f(position, piece)
-    }
   }
 
   private def getKingPosition(board: Board, player: Player): Option[Position] = {

@@ -245,3 +245,8 @@ class PawnTest extends AnyFunSuite:
     testActionError(BLACK_PLAYER, DropAction(Position(4, 5), PAWN), IllegalDrop, s0)
     testActionError(WHITE_PLAYER, DropAction(Position(3, 4), PAWN), IllegalDrop, s1)
   }
+
+  test("Pawn score should be 1") {
+    assert(Pawn(WHITE_PLAYER).score == 1)
+    assert(Pawn(BLACK_PLAYER).score == 1)
+  }

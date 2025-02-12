@@ -196,3 +196,8 @@ class PromotedSilverTest extends AnyFunSuite:
       testActionError(WHITE_PLAYER, DropAction(pos, P_SILVER), InvalidDropPiece, s1)
     })
   }
+
+  test("Promoted Silver score should be 1") {
+    assert(PromotedSilver(WHITE_PLAYER).score == 1)
+    assert(PromotedSilver(BLACK_PLAYER).score == 1)
+  }

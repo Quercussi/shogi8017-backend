@@ -221,3 +221,8 @@ class RookTest extends AnyFunSuite:
       assert(r1.hands.get(BLACK_PLAYER).contains(Multiset(ROOK)))
     })
   }
+
+  test("Rook score should be 5") {
+    assert(Rook(WHITE_PLAYER).score == 5)
+    assert(Rook(BLACK_PLAYER).score == 5)
+  }

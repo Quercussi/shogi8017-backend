@@ -224,3 +224,8 @@ class SilverTest extends AnyFunSuite:
       assert(r1.hands.get(BLACK_PLAYER).contains(Multiset(SILVER)))
     })
   }
+  
+  test("Silver score should be 1") {
+    assert(Silver(WHITE_PLAYER).score == 1)
+    assert(Silver(BLACK_PLAYER).score == 1)
+  }

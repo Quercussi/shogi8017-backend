@@ -8,6 +8,8 @@ case class Knight(owner: Player) extends Piece with UnitMovingPieceMethods with 
     PromotablePieceType.KNIGHT
   }
 
+  def score: Int = 1
+  
   def unitDirections: List[Direction] = Knight.directions(this.owner)
 
   override def additionalDropValidation(board: Board, drop: DropAction): Boolean = {

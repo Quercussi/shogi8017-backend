@@ -200,3 +200,8 @@ class PromotedRookTest extends AnyFunSuite:
       testActionError(WHITE_PLAYER, DropAction(pos, P_ROOK), InvalidDropPiece, s1)
     })
   }
+
+  test("Promoted Rook score should be 5") {
+    assert(PromotedRook(WHITE_PLAYER).score == 5)
+    assert(PromotedRook(BLACK_PLAYER).score == 5)
+  }

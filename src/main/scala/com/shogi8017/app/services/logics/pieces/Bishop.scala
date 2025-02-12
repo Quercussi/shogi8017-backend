@@ -7,6 +7,8 @@ case class Bishop(owner: Player) extends Piece with RangedMovingPieceMethods wit
     PromotablePieceType.BISHOP
   }
 
+  def score: Int = 5
+  
   def rangedDirections: List[Direction] = Bishop.directions
 }
 

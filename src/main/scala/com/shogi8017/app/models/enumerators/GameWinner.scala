@@ -2,6 +2,7 @@ package com.shogi8017.app.models.enumerators
 
 import com.shogi8017.app.services.logics.Player
 import doobie.util.{Get, Put}
+import io.circe.Encoder
 
 enum GameWinner:
   case WHITE_WINNER, BLACK_WINNER, DRAW
@@ -14,6 +15,8 @@ object GameWinner {
       case _ => None
     }
   }
+  
+  implicit val gameWinnerEncoder: Encoder[GameWinner] = Encoder.encodeString.contramap[GameWinner](_.toString)
   
   implicit val gameWinnerGet: Get[GameWinner] = Get[String].temap {
     case "WHITE_WINNER" => Right(GameWinner.WHITE_WINNER)
