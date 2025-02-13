@@ -157,7 +157,7 @@ object Board {
       lazy val checked = isChecked(board, opponent)
       lazy val escape = hasEscape(board, opponent)
       lazy val stalemate = isStalemate(board, opponent)
-      lazy val impasseWinner = isImpasse(board)
+      lazy val impasseWinner = determineImpasseWinner(board)
 
       (checked, escape, stalemate, impasseWinner) match {
         case (true, true, _, _) =>      GameEventWinnerPair(Some(CHECK),      None)
@@ -197,7 +197,7 @@ object Board {
     )
   }
 
-  private def isImpasse(board: Board): Option[GameWinner] = {
+  private def determineImpasseWinner(board: Board): Option[GameWinner] = {
     val whiteKingInZone = getKingPosition(board, WHITE_PLAYER).exists(_.y >= 7)
     val blackKingInZone = getKingPosition(board, BLACK_PLAYER).exists(_.y <= 3)
 

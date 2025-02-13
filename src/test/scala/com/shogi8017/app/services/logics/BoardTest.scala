@@ -2,6 +2,7 @@ package com.shogi8017.app.services.logics
 
 import cats.data.Validated.Valid
 import com.shogi8017.app.exceptions.{IllegalMove, NotOwnerOfPiece, OutOfTurn}
+import com.shogi8017.app.models.enumerators.GameWinner.{BLACK_WINNER, DRAW, WHITE_WINNER}
 import com.shogi8017.app.services.logics.Board.{executeOnBoardAction, executionAction}
 import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE}
 import com.shogi8017.app.services.logics.LogicTestUtils.{testAction, testActionError}
@@ -379,4 +380,119 @@ class BoardTest extends AnyFunSuite {
 //      case Valid(board) => assert(board.piecesMap == expectedFinalPosition)
 //      case Invalid(e) => fail(s"All moves should be valid: $e")
 //  }
+
+  test("A board can check a draw by impasse") {
+    val handMap = Map(
+      KNIGHT -> 2,
+      LANCE -> 2,
+      SILVER -> 2,
+      GOLD -> 2,
+      BISHOP -> 1,
+      ROOK -> 1,
+      PAWN -> 9
+    )
+
+    val s0 = Board(
+      piecesMap = Map(
+        Position(5,7) -> King(WHITE_PLAYER),
+        Position(5,4) -> King(BLACK_PLAYER),
+      ),
+      hands = Map(WHITE_PLAYER -> Multiset(handMap), BLACK_PLAYER -> Multiset(handMap)),
+      auxiliaryState = BoardAuxiliaryState(lastAction = Some(Actor(WHITE_PLAYER)), gameWinner = None)
+    )
+
+    executeOnBoardAction(s0, BLACK_PLAYER, MoveAction(Position(5, 4), Position(5, 3))) match {
+      case Valid((s1, _, _, gameEvent)) =>
+        gameEvent.winner match {
+          case Some(DRAW) => ()
+          case Some(w) => fail(s"It should have been a draw. Winner: $w")
+          case None => fail("There should be a game event")
+        }
+      case _ => fail("Move should be valid")
+    }
+  }
+
+  test("A board can check a winner by impasse 1") {
+    val winnerHandMap = Map(
+      KNIGHT -> 2,
+      LANCE -> 2,
+      SILVER -> 2,
+      GOLD -> 2,
+      BISHOP -> 1,
+      ROOK -> 1,
+      PAWN -> 9
+    )
+
+    val loserHandMap = Map(
+      KNIGHT -> 2,
+      LANCE -> 2,
+      SILVER -> 2,
+      GOLD -> 2,
+      PAWN -> 9
+    )
+
+    val s0 = Board(
+      piecesMap = Map(
+        Position(5,7) -> King(WHITE_PLAYER),
+        Position(5,4) -> King(BLACK_PLAYER),
+        Position(4,4) -> Rook(BLACK_PLAYER),
+        Position(6,4) -> Bishop(BLACK_PLAYER),
+      ),
+      hands = Map(WHITE_PLAYER -> Multiset(loserHandMap), BLACK_PLAYER -> Multiset(winnerHandMap)),
+      auxiliaryState = BoardAuxiliaryState(lastAction = Some(Actor(WHITE_PLAYER)), gameWinner = None)
+    )
+
+    executeOnBoardAction(s0, BLACK_PLAYER, MoveAction(Position(5, 4), Position(5, 3))) match {
+      case Valid((s1, _, _, gameEvent)) =>
+        gameEvent.winner match {
+          case Some(BLACK_WINNER) => ()
+          case Some(w) => fail(s"Black should have won. Winner: $w")
+          case None => fail("There should be a game event")
+        }
+      case _ => fail("Move should be valid")
+    }
+
+
+  }
+
+  test("A board can check a winner by impasse 2") {
+    val winnerHandMap = Map(
+      KNIGHT -> 2,
+      LANCE -> 2,
+      SILVER -> 2,
+      GOLD -> 2,
+      BISHOP -> 1,
+      ROOK -> 1,
+      PAWN -> 9
+    )
+
+    val loserHandMap = Map(
+      KNIGHT -> 2,
+      LANCE -> 2,
+      SILVER -> 2,
+      GOLD -> 2,
+      PAWN -> 9
+    )
+
+    val s0 = Board(
+      piecesMap = Map(
+        Position(5,6) -> King(WHITE_PLAYER),
+        Position(5,3) -> King(BLACK_PLAYER),
+        Position(4,4) -> Rook(WHITE_PLAYER),
+        Position(2,4) -> Bishop(WHITE_PLAYER),
+      ),
+      hands = Map(WHITE_PLAYER -> Multiset(winnerHandMap), BLACK_PLAYER -> Multiset(loserHandMap)),
+      auxiliaryState = BoardAuxiliaryState(lastAction = Some(Actor(BLACK_PLAYER)), gameWinner = None)
+    )
+
+    executeOnBoardAction(s0, WHITE_PLAYER, MoveAction(Position(5, 6), Position(5, 7))) match {
+      case Valid((s1, _, _, gameEvent)) =>
+        gameEvent.winner match {
+          case Some(WHITE_WINNER) => ()
+          case Some(w) => fail(s"White should have won. Winner: $w")
+          case None => fail("There should be a game event")
+        }
+      case _ => fail("Move should be valid")
+    }
+  }
 }
