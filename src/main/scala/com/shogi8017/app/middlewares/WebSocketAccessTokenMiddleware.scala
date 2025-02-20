@@ -3,7 +3,6 @@ package com.shogi8017.app.middlewares
 import cats.data.Kleisli
 import cats.effect.IO
 import com.shogi8017.app.JwtConfig
-import com.shogi8017.app.middlewares.middlewareUtils.TokenDecoder.jwtAlgorithm
 import com.shogi8017.app.middlewares.middlewareUtils.{AuthUserBuilder, CommonAuthHandlers, TokenDecoder}
 import com.shogi8017.app.models.UserModel
 import org.http4s.Request
@@ -13,7 +12,7 @@ object WebSocketAccessTokenMiddleware extends UserTokenMiddleware with CommonAut
   private def decodeToken(jwtConfig: JwtConfig, token: String): IO[Either[String, UserModel]] =
     TokenDecoder.decodeUserToken(
       token,
-      jwtConfig.accessTokenSecret, // TODO: Assuming this should be access token secret
+      jwtConfig.websocketAccessTokenSecret,
       jwtConfig.algorithm,
       classMapper,
       "Invalid WebSocket token payload",

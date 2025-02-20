@@ -18,3 +18,6 @@ object TokenRefreshResponse {
     TokenRefreshResponse(l.accessToken, l.refreshToken, l.accessTokenExpiry, l.refreshTokenExpiry)
   }
 }
+
+case class WebSocketRequestPayload()
+case class WebSocketResponsePayload(websocketAccessToken: String, websocketAccessTokenExpiry: Long)

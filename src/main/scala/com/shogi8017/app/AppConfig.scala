@@ -44,6 +44,8 @@ case class JwtConfig(
   accessTokenTtlSeconds: Int,
   refreshTokenSecret: String,
   refreshTokenTtlSeconds: Int,
+  websocketAccessTokenSecret: String,
+  websocketAccessTokenTtlSeconds: Int
 ) derives ConfigReader
 
 case class App(name: String, port: Int, version: String) derives ConfigReader

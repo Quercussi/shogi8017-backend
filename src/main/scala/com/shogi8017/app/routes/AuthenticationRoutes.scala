@@ -30,9 +30,16 @@ case class AuthenticationRoutes(authenticationService: AuthenticationService) {
   }
 
   def getRefreshTokenRoute: AuthedRoutes[UserModel, IO] = AuthedRoutes.of[UserModel, IO] {
-      case POST -> Root / "refreshToken" as user =>
+      case POST -> Root as user =>
       for {
         res <- Ok(TokenRefreshResponse.from(authenticationService.getUserToken(user)))
+      } yield res
+  }
+
+  def getWebSocketTokenRoute: AuthedRoutes[UserModel, IO] = AuthedRoutes.of[UserModel, IO] {
+    case POST -> Root as user =>
+      for {
+        res <- Ok(authenticationService.getUserWebsocketToken(user))
       } yield res
   }
 }

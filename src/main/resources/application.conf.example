@@ -22,6 +22,8 @@ shogi8017 {
     access-token-ttl-seconds =
     refresh-token-secret =
     refresh-token-ttl-seconds =
+    websocket-access-token-secret =
+    websocket-access-token-ttl-seconds =
   }
 
   env {
