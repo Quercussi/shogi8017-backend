@@ -21,14 +21,4 @@ trait TokenMiddleware[T: Decoder, U] {
               IO(println(s"Authentication error: ${e.getMessage}")) *> IO.pure(None)
             }
       }
-
-  protected def jwtAlgorithm(algorithm: Option[String]): JwtHmacAlgorithm = {
-    JwtAlgorithm.fromString(algorithm.getOrElse("HS256")) match {
-      case algo: JwtHmacAlgorithm => algo
-      case invalid =>
-        throw new IllegalArgumentException(s"Invalid algorithm: $invalid. Supported: HMAC algorithms only.")
-    }
-  }
-
-  protected def jwtAuthAccess(tokenSecret: String, algorithm: Option[String]): JwtAuth = JwtAuth.hmac(tokenSecret.toCharArray, jwtAlgorithm(algorithm))
 }
