@@ -18,15 +18,16 @@ class UnifiedRoutes(
   gameActionRoutes: GameActionRoutes,
 ) {
   private val publicRoutes = Router(
-    "/api" -> (authenticationRoutes.getLoginRoute <+> unauthenticatedRoutes.getSignUpRoute)
+    "api/v1/public" -> (authenticationRoutes.getLoginRoute <+>
+               unauthenticatedRoutes.getSignUpRoute)
   )
 
   private def wsRoutes(wbs: WebSocketBuilder2[IO]) = Router(
-    "/ws" -> mc.accessTokenMiddleware(gameActionRoutes.routes(wbs) <+> invitationRoutes.routes(wbs))
+    "api/ws/v1" -> mc.websocketAccessTokenMiddleware(gameActionRoutes.routes(wbs) <+> invitationRoutes.routes(wbs))
   )
 
   private val refreshRoutes = Router(
-    "/api" -> mc.refreshTokenMiddleware(authenticationRoutes.getRefreshTokenRoute)
+    "api/v1/token" -> mc.refreshTokenMiddleware(authenticationRoutes.getRefreshTokenRoute)
   )
 
   def getRoutes: HttpRoutes[IO] =
