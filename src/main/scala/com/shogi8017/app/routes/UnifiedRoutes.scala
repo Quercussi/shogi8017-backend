@@ -14,6 +14,7 @@ class UnifiedRoutes(
   mc: MiddlewareCollection,
   authenticationRoutes: AuthenticationRoutes,
   unauthenticatedRoutes: UnauthenticatedRoutes,
+  userRoutes: UserRoutes,
   invitationRoutes: InvitationRoutes,
   gameActionRoutes: GameActionRoutes,
 ) {
@@ -26,6 +27,12 @@ class UnifiedRoutes(
 
   private def wsRoutes(wbs: WebSocketBuilder2[IO]) = Router(
     "api/ws/v1" -> mc.websocketAccessTokenMiddleware(gameActionRoutes.routes(wbs) <+> invitationRoutes.routes(wbs))
+  )
+
+  private val authedRoutes = Router(
+    "api/v1" -> mc.accessTokenMiddleware(
+      userRoutes.getUserRoutes
+    )
   )
 
   private val websocketRoutes = Router(
@@ -41,7 +48,7 @@ class UnifiedRoutes(
   )
 
   def getRoutes: HttpRoutes[IO] =
-    publicRoutes <+> wsRoutes(wbs) <+> websocketRoutes <+> refreshRoutes
+    publicRoutes <+> wsRoutes(wbs) <+> websocketRoutes <+> refreshRoutes <+> authedRoutes
 }
 
 object UnifiedRoutes {
@@ -54,6 +61,7 @@ object UnifiedRoutes {
   ): UnifiedRoutes = {
     val authenticationRoutes = AuthenticationRoutes.of(serviceCollection.authenticationService)
     val unauthenticatedRoutes = UnauthenticatedRoutes.of(serviceCollection.userService)
+    val userRoutes = UserRoutes.of(serviceCollection.userService)
     val invitationRoutes = InvitationRoutes.of(wsBuffer.invitationRouteBuffer)
     val gameActionRoutes = GameActionRoutes.of(wsBuffer.gameActionRouteBuffer)
     new UnifiedRoutes(
@@ -61,6 +69,7 @@ object UnifiedRoutes {
       middlewareCollection,
       authenticationRoutes,
       unauthenticatedRoutes,
+      userRoutes,
       invitationRoutes,
       gameActionRoutes
     )

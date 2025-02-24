@@ -4,8 +4,8 @@ import cats.effect.IO
 import com.shogi8017.app.database.DatabaseResource
 import com.shogi8017.app.exceptions.IncorrectUsernameOrPassword
 import com.shogi8017.app.models.UserModel
-import com.shogi8017.app.repository.{CreateUserPayload, FindUserByUsernamePayload, UserRepository}
-import com.shogi8017.app.routes.{UserLoginPayload, UserSignUpPayload}
+import com.shogi8017.app.repository.{CreateUserPayload, FindUserByUsernamePayload, PaginatedSearchUserPayloadRepo, PaginatedSearchUserResponseRepo, UserRepository}
+import com.shogi8017.app.routes.{PaginatedSearchUserPayload, PaginatedSearchUserResponse, UserLoginPayload, UserSignUpPayload}
 import org.mindrot.jbcrypt.BCrypt
 
 class UserService(userRepository: UserRepository) {
@@ -27,6 +27,11 @@ class UserService(userRepository: UserRepository) {
     val hashedPassword = BCrypt.hashpw(payload.password, BCrypt.gensalt());
     val createUserPayload = CreateUserPayload(payload.username, hashedPassword)
     userRepository.createUser(createUserPayload)
+  }
+  
+  def paginatedSearchUser(payload: PaginatedSearchUserPayload): IO[Either[Throwable, PaginatedSearchUserResponse]] = {
+    val res = userRepository.paginatedSearchUser(PaginatedSearchUserPayloadRepo.fromPaginatedSearchUserPayload(payload))
+    res.map(_.map(PaginatedSearchUserResponseRepo.toPaginatedSearchUserResponse))
   }
 }
 
