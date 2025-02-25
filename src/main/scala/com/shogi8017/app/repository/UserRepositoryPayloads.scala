@@ -6,12 +6,12 @@ import com.shogi8017.app.routes.{PaginatedSearchUserPayload, PaginatedSearchUser
 case class CreateUserPayload(username: String, hashedPassword: String)
 case class GetUserPayload(userId: String)
 case class FindUserByUsernamePayload(username: String)
-case class PaginatedSearchUserPayloadRepo(searchQuery: String, offset: Int, limit: Int)
+case class PaginatedSearchUserPayloadRepo(searchQuery: String, offset: Int, limit: Int, excludingUserIds: List[String])
 case class PaginatedSearchUserResponseRepo(users: List[UserModel], nextOffset: Int, total: Int)
 
 object PaginatedSearchUserPayloadRepo {
   def fromPaginatedSearchUserPayload(payload: PaginatedSearchUserPayload): PaginatedSearchUserPayloadRepo = {
-    PaginatedSearchUserPayloadRepo(payload.searchQuery, payload.offset, payload.limit)
+    PaginatedSearchUserPayloadRepo(payload.searchQuery, payload.offset, payload.limit, payload.excludingUserIds)
   }
 }
 

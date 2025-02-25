@@ -11,14 +11,17 @@ import org.http4s.dsl.io.*
 
 case class UserRoutes(userService: UserService) {
   def getUserRoutes: AuthedRoutes[UserModel, IO] = AuthedRoutes.of[UserModel, IO] {
-    case GET -> Root / "user" / "search" :? SearchQueryParam(searchQuery) +& OffsetParam(offset) +& LimitParam(limit) as user =>
+    case GET -> Root / "user" / "search" :? SearchQueryParam(searchQuery) +& OffsetParam(offset) +& LimitParam(limit)  +& ExcludeRequestingUserParam(excludeRequestingUser) as user =>
       val formattedSearchQuery = searchQuery
       val formattedOffset = offset.getOrElse(0)
+      val formattedExcludeRequestingUser = excludeRequestingUser.getOrElse(true)
       val defaultLimit = limit.getOrElse(10)
       val formattedLimit = if (defaultLimit > 50) 50 else defaultLimit
 
+      val excludingUserIds = if (formattedExcludeRequestingUser) List(user.userId) else List.empty
+
       for {
-        response <- userService.paginatedSearchUser(PaginatedSearchUserPayload(formattedSearchQuery, formattedOffset, formattedLimit))
+        response <- userService.paginatedSearchUser(PaginatedSearchUserPayload(formattedSearchQuery, formattedOffset, formattedLimit, excludingUserIds))
 
         res <- response match {
           case Right(searchResponse) => Ok(searchResponse.asJson)
