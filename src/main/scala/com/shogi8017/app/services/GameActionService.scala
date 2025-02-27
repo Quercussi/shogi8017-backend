@@ -183,7 +183,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
       _ <- createExecutionHistories(game.boardId, ExecutionAction(resigningPlayer, ResignAction()), newMoveNumber)
     } yield ResignResultWithContestantsId(game.whiteUserId, game.blackUserId, resigningPlayer)
 
-    
+
     resignResult.value.flatMap {
       case Right(result) =>
         val gameEventWinnerPair = GameEventWinnerPair(Some(RESIGNATION), Some(toWinner(opponent(result.resigningPlayer))))
@@ -194,9 +194,9 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
   }
 
   private def processOnBoardAction(
-   requestContext: GameActionRequestContext,
-   clientRegistry: GameActionAPIRegistry,
-   action: OnBoardAction,
+    requestContext: GameActionRequestContext,
+    clientRegistry: GameActionAPIRegistry,
+    action: OnBoardAction,
   ): IO[Unit] = {
     val gameCertificate = requestContext.context.gameCertificate
     val requestingUser = requestContext.context.user
@@ -243,45 +243,30 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
   }
 
   private def getInvitation(gameCertificate: String): EitherT[IO, Throwable, InvitationModel] = {
-    val k = invitationRepository.getInvitationByGameCertificate(
+    invitationRepository.getInvitationByGameCertificate(
       GetInvitationByGameCertificatePayload(gameCertificate)
-    )
-    EitherT(invitationRepository.getInvitationByGameCertificate(
-      GetInvitationByGameCertificatePayload(gameCertificate)
-    )).subflatMap {
-      _.toRight(InvitationNotFound)
-    }
+    ).subflatMap(_.toRight(InvitationNotFound))
   }
 
   private def updateInvitation(invitationModel: InvitationModel): EitherT[IO, Throwable, Unit] = {
-    EitherT(
-      invitationRepository.updateInvitation(UpdateInvitationPayload(invitationModel))
-    ).void
+    invitationRepository.updateInvitation(UpdateInvitationPayload(invitationModel))
   }
 
   private def getGame(gameCertificate: String): EitherT[IO, Throwable, GameModel] =
-    EitherT(
-      gameRepository.getGame(GetGamePayload(gameCertificate)
-    )).subflatMap {
-      _.toRight(GameNotFound)
-    }
+    gameRepository.getGame(GetGamePayload(gameCertificate))
+      .subflatMap(_.toRight(GameNotFound))
 
   private def getUser(userId: String): EitherT[IO, Throwable, UserModel] =
-    EitherT(
-      userRepository.getUserById(GetUserPayload(userId))
-    ).subflatMap {
-      _.toRight(UserNotFound)
-    }
+    userRepository.getUserById(GetUserPayload(userId))
+      .subflatMap(_.toRight(UserNotFound))
 
   private def createGame(gameCertificate: String, whiteUserId: String, blackUserId: String): EitherT[IO, Throwable, GameModel] =
-    EitherT(
-      gameRepository.createGame(CreateGamePayload(gameCertificate, whiteUserId, blackUserId))
-    )
+    gameRepository.createGame(CreateGamePayload(gameCertificate, whiteUserId, blackUserId))
 
   private def getExecutionHistories(game: GameModel): EitherT[IO, Throwable, List[BoardHistoryModel]] =
-    EitherT(boardHistoryRepository.getBoardHistories(GetBoardHistoriesPayload(game.boardId)))
+    boardHistoryRepository.getBoardHistories(GetBoardHistoriesPayload(game.boardId))
 
-  private def createExecutionHistories(boardId: String, executionAction: ExecutionAction, moveNumber: Int): EitherT[IO, Throwable, BoardHistoryModel] =
+  private def createExecutionHistories(boardId: String, executionAction: ExecutionAction, moveNumber: Int): EitherT[IO, Throwable, BoardHistoryModel] = {
     val payload = executionAction.playerAction match {
       case MoveAction(from, to, toPromote) =>
         CreateBoardHistoryPayload(
@@ -326,7 +311,8 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
         )
     }
 
-    EitherT(boardHistoryRepository.createBoardHistory(payload))
+    boardHistoryRepository.createBoardHistory(payload)
+  }
 }
 
 object GameActionService {

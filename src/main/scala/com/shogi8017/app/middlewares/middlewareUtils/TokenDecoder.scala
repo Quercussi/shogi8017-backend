@@ -1,6 +1,8 @@
 package com.shogi8017.app.middlewares.middlewareUtils
 
+import cats.data.EitherT
 import cats.effect.IO
+import cats.implicits.catsSyntaxEither
 import com.shogi8017.app.jwtClaimModels.UserClaimModel
 import com.shogi8017.app.models.UserModel
 import dev.profunktor.auth.jwt.{JwtAuth, JwtToken, jwtDecode}
@@ -16,14 +18,12 @@ object TokenDecoder {
    classMapper: UserClaimModel => UserModel,
    payloadError: String,
    decodeError: String => String
-  ): IO[Either[String, UserModel]] = {
+  ): EitherT[IO, String, UserModel] = {
     val jwtAuth = jwtAuthAccess(secret, algorithm)
-    jwtDecode[IO](JwtToken(token), jwtAuth).flatMap { claim =>
-      decode[UserClaimModel](claim.content) match {
-        case Right(userClaim) => IO.pure(Right(classMapper(userClaim)))
-        case Left(_)          => IO.pure(Left(payloadError))
-      }
-    }.handleError(e => Left(decodeError(e.toString)))
+    for {
+      claim <- EitherT.liftF(jwtDecode[IO](JwtToken(token), jwtAuth))
+      userClaim <- EitherT.fromEither(decode[UserClaimModel](claim.content).leftMap(_ => decodeError(payloadError)))
+    } yield classMapper(userClaim)
   }
 
   def jwtAuthAccess(tokenSecret: String, algorithm: Option[String]): JwtAuth = JwtAuth.hmac(tokenSecret.toCharArray, jwtAlgorithm(algorithm))

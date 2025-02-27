@@ -21,7 +21,7 @@ case class UserRoutes(userService: UserService) {
       val excludingUserIds = if (formattedExcludeRequestingUser) List(user.userId) else List.empty
 
       for {
-        response <- userService.paginatedSearchUser(PaginatedSearchUserPayload(formattedSearchQuery, formattedOffset, formattedLimit, excludingUserIds))
+        response <- userService.paginatedSearchUser(PaginatedSearchUserPayload(formattedSearchQuery, formattedOffset, formattedLimit, excludingUserIds)).value
 
         res <- response match {
           case Right(searchResponse) => Ok(searchResponse.asJson)

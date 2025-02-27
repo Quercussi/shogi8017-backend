@@ -1,46 +1,45 @@
 package com.shogi8017.app.repository
 
+import cats.data.EitherT
 import cats.effect.IO
 import cats.effect.std.UUIDGen
-import com.shogi8017.app.database.DatabaseResource
 import com.shogi8017.app.models.enumerators.GameState.PENDING
-import com.shogi8017.app.models.{BoardHistoryModel, GameModel}
+import com.shogi8017.app.models.GameModel
 import doobie.*
 import doobie.implicits.*
 
 class GameRepository(trx: Transactor[IO]) {
-  def createGame(payload: CreateGamePayload): IO[Either[Throwable, GameModel]] = {
-    (for {
-      boardId <- UUIDGen[IO].randomUUID.map(_.toString)
-      gameId <- UUIDGen[IO].randomUUID.map(_.toString)
-      invitationId <- UUIDGen[IO].randomUUID.map(_.toString)
-      result <- (for {
-        _ <-
-          sql"""
-            INSERT INTO boards (boardId)
-            VALUES ($boardId)
-          """.update.run
 
-        _ <-
-          sql"""
-            INSERT INTO games (gameId, gameCertificate, boardId, whiteUserId, blackUserId, gameState)
-            VALUES ($gameId, ${payload.gameCertificate}, $boardId, ${payload.whiteUserId}, ${payload.blackUserId}, 'PENDING')
-          """.update.run
+  def createGame(payload: CreateGamePayload): EitherT[IO, Throwable, GameModel] = {
+    for {
+      boardId <- EitherT.liftF(UUIDGen[IO].randomUUID.map(_.toString))
+      gameId <- EitherT.liftF(UUIDGen[IO].randomUUID.map(_.toString))
 
-      } yield GameModel(gameId, payload.gameCertificate, boardId, payload.whiteUserId, payload.blackUserId, None, PENDING)).transact(trx)
-    } yield result).attempt
+      _ <- EitherT {
+        sql"""
+          INSERT INTO boards (boardId)
+          VALUES ($boardId)
+        """.update.run.transact(trx).attempt
+      }
+
+      _ <- EitherT {
+        sql"""
+          INSERT INTO games (gameId, gameCertificate, boardId, whiteUserId, blackUserId, gameState)
+          VALUES ($gameId, ${payload.gameCertificate}, $boardId, ${payload.whiteUserId}, ${payload.blackUserId}, 'PENDING')
+        """.update.run.transact(trx).attempt
+      }
+
+    } yield GameModel(gameId, payload.gameCertificate, boardId, payload.whiteUserId, payload.blackUserId, None, PENDING)
   }
-  
-  def getGame(payload: GetGamePayload): IO[Either[Throwable, Option[GameModel]]] = {
-    (for {
-      result <- (for {
-        game <- sql"""
-          SELECT *
-          FROM games
-          WHERE gameCertificate = ${payload.gameCertificate}
-        """.query[GameModel].option
-      } yield game).transact(trx)
-    } yield result).attempt
+
+  def getGame(payload: GetGamePayload): EitherT[IO, Throwable, Option[GameModel]] = {
+    EitherT {
+      sql"""
+        SELECT *
+        FROM games
+        WHERE gameCertificate = ${payload.gameCertificate}
+      """.query[GameModel].option.transact(trx).attempt
+    }
   }
 }
 

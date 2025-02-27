@@ -1,6 +1,7 @@
 package com.shogi8017.command.migration
 
-import cats.effect.*
+import cats.data.EitherT
+import cats.effect.{ExitCode, IO, Resource}
 import com.shogi8017.app.{AppConfig, DatabaseConfig}
 import com.typesafe.scalalogging.LazyLogging
 import fly4s.Fly4s
@@ -33,5 +34,5 @@ object DatabaseMigrations extends LazyLogging {
       case Left(error) => logValidationErrors(error).as(ExitCode.Error)
     }
 
-  def loadAppConfig(configNamespace: String): IO[Either[Throwable, AppConfig]] = AppConfig.loadConfig(configNamespace)
+  def loadAppConfig(configNamespace: String): EitherT[IO, Throwable, AppConfig] = AppConfig.loadConfig(configNamespace)
 }

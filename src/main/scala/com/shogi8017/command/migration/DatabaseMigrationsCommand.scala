@@ -12,7 +12,7 @@ object DatabaseMigrationsCommand extends IOApp with LazyLogging {
     val configNamespace = args.headOption.getOrElse(defaultConfigNamespace)
     
     for {
-      appConfigEither <- AppConfig.loadConfig(configNamespace)
+      appConfigEither <- AppConfig.loadConfig(configNamespace).value
       result <- appConfigEither match {
         case Right(appConfig) =>
           val dbConfig = appConfig.database

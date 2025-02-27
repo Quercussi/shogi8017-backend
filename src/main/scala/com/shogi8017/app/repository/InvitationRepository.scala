@@ -1,5 +1,6 @@
 package com.shogi8017.app.repository
 
+import cats.data.EitherT
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import com.shogi8017.app.models.InvitationModel
@@ -7,34 +8,33 @@ import doobie.*
 import doobie.implicits.*
 
 class InvitationRepository(trx: Transactor[IO]) {
-  def getInvitationByGameCertificate(payload: GetInvitationByGameCertificatePayload): IO[Either[Throwable, Option[InvitationModel]]] = {
+  def getInvitationByGameCertificate(payload: GetInvitationByGameCertificatePayload): EitherT[IO, Throwable, Option[InvitationModel]] = {
     val gameCertificate = payload.gameCertificate
-    val query: Query0[InvitationModel] = sql"SELECT * FROM invitations u WHERE u.gameCertificate = $gameCertificate".query[InvitationModel]
-    query.option.transact(trx).attempt
+    val query = sql"SELECT * FROM invitations WHERE gameCertificate = $gameCertificate".query[InvitationModel]
+    EitherT(query.option.transact(trx).attempt)
   }
 
-  def createInvitation(payload: CreateInvitationPayload): IO[Either[Throwable, InvitationModel]] = {
+  def createInvitation(payload: CreateInvitationPayload): EitherT[IO, Throwable, InvitationModel] = {
     for {
-      invitationUuid <- UUIDGen.randomUUID[IO]
-      gameCertificateUuid <- UUIDGen.randomUUID[IO]
+      invitationUuid <- EitherT.liftF(UUIDGen.randomUUID[IO])
+      gameCertificateUuid <- EitherT.liftF(UUIDGen.randomUUID[IO])
       invitationId = invitationUuid.toString
       gameCertificate = gameCertificateUuid.toString
-      result <-
+      _ <- EitherT {
         sql"""
-        INSERT INTO invitations (invitationId, gameCertificate, whitePlayerId, blackPlayerId, hasWhiteAccepted, hasBlackAccepted)
-        VALUES ($invitationId, $gameCertificate, ${payload.whitePlayerId}, ${payload.blackPlayerId}, FALSE, FALSE)
-      """.update.run.transact(trx).attempt
-    } yield result match {
-      case Right(_) => Right(InvitationModel(invitationId, gameCertificate, payload.whitePlayerId, payload.blackPlayerId, false, false))
-      case Left(error) => Left(error)
-    }
+          INSERT INTO invitations (invitationId, gameCertificate, whitePlayerId, blackPlayerId, hasWhiteAccepted, hasBlackAccepted)
+          VALUES ($invitationId, $gameCertificate, ${payload.whitePlayerId}, ${payload.blackPlayerId}, FALSE, FALSE)
+        """.update.run.transact(trx).attempt.map {
+          case Right(_) => Right(())
+          case Left(error) => Left(error)
+        }
+      }
+    } yield InvitationModel(invitationId, gameCertificate, payload.whitePlayerId, payload.blackPlayerId, hasWhiteAccepted = false, hasBlackAccepted = false)
   }
 
-  def updateInvitation(payload: UpdateInvitationPayload): IO[Either[Throwable, Unit]] = {
+  def updateInvitation(payload: UpdateInvitationPayload): EitherT[IO, Throwable, Unit] = {
     val invitation = payload.invitationModel
-
-    val query: Update0 =
-      sql"""
+    val query = sql"""
       UPDATE invitations
       SET gameCertificate = ${invitation.gameCertificate},
           whitePlayerId = ${invitation.whitePlayerId},
@@ -42,12 +42,12 @@ class InvitationRepository(trx: Transactor[IO]) {
           hasWhiteAccepted = ${invitation.hasWhiteAccepted},
           hasBlackAccepted = ${invitation.hasBlackAccepted}
       WHERE invitationId = ${invitation.invitationId}
-    """.update
+    """.update.run
 
-    query.run.transact(trx).attempt.map {
+    EitherT(query.transact(trx).attempt.map {
       case Right(_) => Right(())
       case Left(err) => Left(err)
-    }
+    })
   }
 }
 

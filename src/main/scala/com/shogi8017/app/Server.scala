@@ -25,7 +25,7 @@ object Server {
   
   def server: Resource[IO, Server] = for {
     _ <- Resource.eval(IO.println("Loading app configuration"))
-    appConfig <- Resource.eval(AppConfig.loadConfig(configNamespace).flatMap {
+    appConfig <- Resource.eval(AppConfig.loadConfig(configNamespace).value.flatMap {
       case Right(config) => IO.pure(config)
       case Left(error)   => IO.raiseError(error)
     })

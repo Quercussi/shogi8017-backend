@@ -1,6 +1,6 @@
 package com.shogi8017.app.middlewares
 
-import cats.data.Kleisli
+import cats.data.{EitherT, Kleisli}
 import cats.effect.IO
 import com.shogi8017.app.JwtConfig
 import com.shogi8017.app.jwtClaimModels.UserClaimModel
@@ -12,7 +12,8 @@ import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.server.AuthMiddleware
 
 object RefreshTokenMiddleware extends UserTokenMiddleware with CommonAuthHandlers {
-  private def decodeRefreshToken(jwtConfig: JwtConfig, token: String): IO[Either[String, UserModel]] =
+
+  private def decodeRefreshTokenT(jwtConfig: JwtConfig, token: String): EitherT[IO, String, UserModel] =
     TokenDecoder.decodeUserToken(
       token,
       jwtConfig.refreshTokenSecret,
@@ -22,20 +23,22 @@ object RefreshTokenMiddleware extends UserTokenMiddleware with CommonAuthHandler
       e => s"Invalid refresh token: $e"
     )
 
-  private def authUser(jwtConfig: JwtConfig): Kleisli[IO, Request[IO], Either[String, UserModel]] = {
-    val extractToken: Request[IO] => IO[Either[String, String]] = { request =>
-      request.as[Json].flatMap { json =>
-        json.hcursor.get[String]("refreshToken") match {
-          case Right(token) => IO.pure(Right(token))
-          case Left(_)     => IO.pure(Left("Refresh token not found in request"))
-        }
-      }
+  private def extractTokenT(request: Request[IO]): EitherT[IO, String, String] =
+    for {
+      json  <- EitherT.liftF(request.as[Json])
+      token <- EitherT.fromEither[IO](
+        json.hcursor.get[String]("refreshToken").left.map(_ => "Refresh token not found in request")
+      )
+    } yield token
+
+  private def authUser(jwtConfig: JwtConfig): Kleisli[IO, Request[IO], Either[String, UserModel]] =
+    Kleisli { request =>
+      (for {
+        token <- extractTokenT(request)
+        user  <- decodeRefreshTokenT(jwtConfig, token)
+      } yield user).value
     }
 
-    AuthUserBuilder.build(jwtConfig, extractToken, decodeRefreshToken)
-  }
-
-  def of(jwtConfig: JwtConfig): AuthMiddleware[IO, UserModel] = {
+  def of(jwtConfig: JwtConfig): AuthMiddleware[IO, UserModel] =
     AuthMiddleware(authUser(jwtConfig), onFailure)
-  }
 }

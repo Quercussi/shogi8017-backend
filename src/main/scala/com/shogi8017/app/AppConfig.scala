@@ -1,16 +1,16 @@
 package com.shogi8017.app
 
+import cats.data.EitherT
 import cats.effect.IO
+import cats.implicits.catsSyntaxEither
 import pureconfig.{ConfigReader, ConfigSource}
 
 case class AppConfig(app: App, database: DatabaseConfig, jwt: JwtConfig, env: Env) derives ConfigReader
 
 object AppConfig {
-  def loadConfig(namespace: String): IO[Either[Throwable, AppConfig]] = IO {
-    ConfigSource.default.at(namespace).load[AppConfig] match {
-      case Right(config) => Right(config)
-      case Left(errors)  => Left(new RuntimeException(s"\n\tConfig loading failed: ${errors.prettyPrint(2)}"))
-    }
+  def loadConfig(namespace: String): EitherT[IO, Throwable, AppConfig] = {
+    val configResult = ConfigSource.default.at(namespace).load[AppConfig]
+    EitherT.fromEither[IO](configResult.leftMap(errors => new RuntimeException(s"\n\tConfig loading failed: ${errors.prettyPrint(2)}")))
   }
 }
 
@@ -30,7 +30,7 @@ case class DatabaseConfig(
        |  Host: $host
        |  Port: $port
        |  Database Name: $databaseName
-       |  User: ${user}
+       |  User: $user
        |  Password: ${password.map(_ => "****")}
        |  Migrations Table: $migrationsTable
        |  Migrations Locations: ${migrationsLocations.mkString(", ")}

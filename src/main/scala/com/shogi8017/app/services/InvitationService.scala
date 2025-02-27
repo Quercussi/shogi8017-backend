@@ -66,8 +66,8 @@ class InvitationService(invitationRepository: InvitationRepository) {
 
   private def onRegularInvitationBody(request: RegularInvitationBodyContext, clientRegistry: InvitationAPIRegistry): IO[Unit] = {
     val (inviter, inviteeId) = (request.context, request.payload.userId)
-    val invitationModelEither = invitationRepository.createInvitation(CreateInvitationPayload(inviter.userId, inviteeId))
-    invitationModelEither.flatMap {
+    val invitationModelEitherT = invitationRepository.createInvitation(CreateInvitationPayload(inviter.userId, inviteeId))
+    invitationModelEitherT.value.flatMap {
       case Right(invitationModel) =>
         publishToTopic(request.context.userId, clientRegistry, InvitationInitializingEvent(invitationModel.gameCertificate)) *>
         publishToTopic(inviteeId, clientRegistry, InvitationNotificationEvent(invitationModel.gameCertificate, inviter))

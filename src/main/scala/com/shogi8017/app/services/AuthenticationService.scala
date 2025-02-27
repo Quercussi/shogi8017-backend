@@ -1,5 +1,6 @@
 package com.shogi8017.app.services
 
+import cats.data.EitherT
 import cats.effect.IO
 import com.shogi8017.app.JwtConfig
 import com.shogi8017.app.exceptions.IncorrectUsernameOrPassword
@@ -63,12 +64,12 @@ class AuthenticationService(jwtConfig: JwtConfig, userRepository: UserRepository
     )
   }
 
-  def loginUser(payload: UserLoginPayload): IO[Either[Throwable, UserLoginResponse]] = {
-    userService.authenticateUser(payload).map {
-      case Left(error) => Left(error)
-      case Right(user) => user match
-        case None => Left(IncorrectUsernameOrPassword)
-        case Some(userModel) => Right(getUserToken(userModel))
+  def loginUser(payload: UserLoginPayload): EitherT[IO, Throwable, UserLoginResponse] = {
+    userService.authenticateUser(payload).flatMap {
+      case None => 
+        EitherT.leftT[IO, UserLoginResponse](IncorrectUsernameOrPassword)
+      case Some(userModel) => 
+        EitherT.rightT[IO, Throwable](getUserToken(userModel))
     }
   }
 }

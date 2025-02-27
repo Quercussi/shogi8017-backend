@@ -17,7 +17,7 @@ case class AuthenticationRoutes(authenticationService: AuthenticationService) {
     case req @ POST -> Root / "login" =>
       for {
         userLoginPayload <- req.as[UserLoginPayload]
-        response <- authenticationService.loginUser(userLoginPayload)
+        response <- authenticationService.loginUser(userLoginPayload).value
         res <- response match {
           case Right(userLoginResponse) => Ok(userLoginResponse.asJson)
             .map(_.addCookie(ResponseCookie("token", userLoginResponse.asJson.noSpaces)))
