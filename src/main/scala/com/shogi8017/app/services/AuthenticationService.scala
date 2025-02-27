@@ -44,6 +44,7 @@ class AuthenticationService(jwtConfig: JwtConfig, userRepository: UserRepository
     val refreshToken = getRefreshToken(userModel)
 
     UserLoginResponse(
+      user = userModel,
       accessToken = accessToken,
       accessTokenExpiry = accessTokenExpiry,
       refreshToken = refreshToken,

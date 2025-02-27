@@ -1,21 +1,21 @@
 package com.shogi8017.app.routes
 
-import io.circe.generic.auto._
-import io.circe.syntax._
+import com.shogi8017.app.models.UserModel
+import io.circe.generic.auto.*
 
 case class UserLoginPayload(username: String, password: String)
-case class UserLoginResponse(accessToken: String, refreshToken: String, accessTokenExpiry: Long, refreshTokenExpiry: Long)
+case class UserLoginResponse(user: UserModel, accessToken: String, refreshToken: String, accessTokenExpiry: Long, refreshTokenExpiry: Long)
 object UserLoginResponse {
   def from(r: TokenRefreshResponse): UserLoginResponse = {
-    UserLoginResponse(r.accessToken, r.refreshToken, r.accessTokenExpiry, r.refreshTokenExpiry)
+    UserLoginResponse(r.user, r.accessToken, r.refreshToken, r.accessTokenExpiry, r.refreshTokenExpiry)
   }
 }
 
 case class TokenRefreshPayload(refreshToken: String)
-case class TokenRefreshResponse(accessToken: String, refreshToken: String, accessTokenExpiry: Long, refreshTokenExpiry: Long)
+case class TokenRefreshResponse(user: UserModel, accessToken: String, refreshToken: String, accessTokenExpiry: Long, refreshTokenExpiry: Long)
 object TokenRefreshResponse {
   def from(l: UserLoginResponse): TokenRefreshResponse = {
-    TokenRefreshResponse(l.accessToken, l.refreshToken, l.accessTokenExpiry, l.refreshTokenExpiry)
+    TokenRefreshResponse(l.user, l.accessToken, l.refreshToken, l.accessTokenExpiry, l.refreshTokenExpiry)
   }
 }
 
