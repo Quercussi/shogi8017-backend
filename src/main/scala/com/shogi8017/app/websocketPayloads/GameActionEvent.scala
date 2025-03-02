@@ -23,7 +23,7 @@ case class ExecutionActionEvent(stateTransitionList: StateTransitionList, gameEv
 
 case class BoardConfigurationEvent(playerList: PlayerList, board: List[PositionPiecePair], handPieceCounts: List[PieceHandCount]) extends GameActionEvent
 case class PlayerList(whitePlayer: UserModel, blackPlayer: UserModel)
-case class PositionPiecePair(position: Position, piece: PieceType)
+case class PositionPiecePair(position: Position, piece: PieceType, owner: Player)
 case class PieceHandCount(player: Player, piece: PieceType, count: Int)
 
 case object KeepAliveGameActionAPI extends GameActionEvent

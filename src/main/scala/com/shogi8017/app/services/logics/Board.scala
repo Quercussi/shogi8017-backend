@@ -324,7 +324,7 @@ object Board {
   def convertToBoardConfigurationEvent(board: Board, whitePlayer: UserModel, blackPlayer: UserModel): BoardConfigurationEvent = {
     val boardConfiguration = board.piecesMap.map {
       case (position, piece) =>
-        PositionPiecePair(position, piece.pieceType)
+        PositionPiecePair(position, piece.pieceType, piece.owner)
     }.toList
 
     val handPieceCounts = board.hands.flatMap {

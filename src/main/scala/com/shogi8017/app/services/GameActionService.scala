@@ -149,9 +149,9 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
     val invitationEitherT: EitherT[IO, Throwable, (InvitationModel, Boolean)] = for {
       invitation <- getInvitation(gameCertificate)
       result <- if (isInvitationComplete(invitation))
-        EitherT.rightT[IO, Throwable]((invitation, false))
-      else
-        processInvitation(invitation, requestingUserId, gameCertificate)
+                  EitherT.rightT[IO, Throwable]((invitation, false))
+                else
+                  processInvitation(invitation, requestingUserId, gameCertificate)
     } yield result
 
     invitationEitherT.value.flatMap {
@@ -167,7 +167,6 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
   private def onMakeMoveRequest(request: MakeMoveRequestContext, clientRegistry: GameActionAPIRegistry): IO[Unit] = {
     processOnBoardAction(request, clientRegistry, request.payload.move)
   }
-
 
   private def onMakeDropRequest(request: MakeDropRequestContext, clientRegistry: GameActionAPIRegistry): IO[Unit] = {
     processOnBoardAction(request, clientRegistry, request.payload.drop)
