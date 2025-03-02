@@ -123,15 +123,20 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
       } yield (updatedInvitation, hasGameCreated)
 
     def notifyPlayersBoardConfiguration(invitation: InvitationModel, recipients: List[String]): IO[Unit] = {
-      (for {
+      val currentBoard = for {
         whiteUser <- getUser(invitation.whitePlayerId)
         blackUser <- getUser(invitation.blackPlayerId)
-        payload = Board.convertToBoardConfigurationEvent(
-          Board.defaultInitialPosition,
+        game <- getGame(invitation.gameCertificate)
+        executionHistories <- getExecutionHistories(game)
+        board <- validateAndSetUpBoard(executionHistories, game.boardId)
+        payload <- EitherT.liftF(IO(Board.convertToBoardConfigurationEvent(
+          board,
           whiteUser,
           blackUser
-        )
-      } yield payload).value.flatMap {
+        )))
+      } yield payload
+
+      currentBoard.value.flatMap {
         case Right(payload) =>
           recipients.traverse_ { userId =>
             publishToTopic(userId, clientRegistry, payload)
