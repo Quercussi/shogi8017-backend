@@ -15,6 +15,7 @@ class UnifiedRoutes(
   authenticationRoutes: AuthenticationRoutes,
   unauthenticatedRoutes: UnauthenticatedRoutes,
   userRoutes: UserRoutes,
+  gameRoutes: GameRoutes,
   invitationRoutes: InvitationRoutes,
   gameActionRoutes: GameActionRoutes,
 ) {
@@ -31,7 +32,8 @@ class UnifiedRoutes(
 
   private val authedRoutes = Router(
     "api/v1" -> mc.accessTokenMiddleware(
-      userRoutes.getUserRoutes
+      userRoutes.getUserRoutes <+>
+      gameRoutes.getGameRoutes
     )
   )
 
@@ -62,6 +64,7 @@ object UnifiedRoutes {
     val authenticationRoutes = AuthenticationRoutes.of(serviceCollection.authenticationService)
     val unauthenticatedRoutes = UnauthenticatedRoutes.of(serviceCollection.userService)
     val userRoutes = UserRoutes.of(serviceCollection.userService)
+    val gameRoutes = GameRoutes.of(serviceCollection.gameService)
     val invitationRoutes = InvitationRoutes.of(wsBuffer.invitationRouteBuffer)
     val gameActionRoutes = GameActionRoutes.of(wsBuffer.gameActionRouteBuffer)
     new UnifiedRoutes(
@@ -70,6 +73,7 @@ object UnifiedRoutes {
       authenticationRoutes,
       unauthenticatedRoutes,
       userRoutes,
+      gameRoutes,
       invitationRoutes,
       gameActionRoutes
     )
