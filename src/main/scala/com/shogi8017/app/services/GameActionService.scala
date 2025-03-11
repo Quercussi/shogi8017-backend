@@ -5,7 +5,7 @@ import cats.effect.std.Queue
 import cats.effect.{Concurrent, IO}
 import cats.syntax.all.*
 import com.shogi8017.app.exceptions.*
-import com.shogi8017.app.models.enumerators.ActionType
+import com.shogi8017.app.models.enumerators.{ActionType, GameState}
 import com.shogi8017.app.models.{BoardHistoryModel, GameModel, InvitationModel, UserModel}
 import com.shogi8017.app.repository.*
 import com.shogi8017.app.services.GameActionService.{validateAndSetUpBoard, validatePlayer}
@@ -185,6 +185,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
       executionHistories <- getExecutionHistories(game)
       newMoveNumber = executionHistories.lastOption.fold(1)(_.actionNumber + 1)
       _ <- createExecutionHistories(game.boardId, ExecutionAction(resigningPlayer, ResignAction()), newMoveNumber)
+      _ <- gameRepository.patchGameState(PatchGameStatePayload(game.gameId, GameState.FINISHED))
     } yield ResignResultWithContestantsId(game.whiteUserId, game.blackUserId, resigningPlayer)
 
 
@@ -224,6 +225,13 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
         ExecutionAction(player, action),
         newMoveNumber,
       )
+      
+      endingGameStates = Set(GameEvent.STALEMATE, GameEvent.IMPASSE, GameEvent.CHECKMATE, GameEvent.RESIGNATION)
+      _ <- if(actionResult._4.gameEvent.exists(event => endingGameStates.contains(event))) {
+        gameRepository.patchGameState(PatchGameStatePayload(game.gameId, GameState.FINISHED))
+      } else {
+        EitherT.pure[IO, Throwable](())
+      }
     } yield ResultWrapper(actionResult, game.whiteUserId, game.blackUserId)
 
     processingPipeline.value.flatMap {

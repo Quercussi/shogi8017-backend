@@ -5,6 +5,7 @@ import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.implicits.*
 import com.shogi8017.app.models.GameModel
+import com.shogi8017.app.models.enumerators.GameState.ON_GOING
 import doobie.free.connection.*
 import doobie.implicits.*
 import doobie.util.query.Query0
@@ -28,7 +29,7 @@ class GameRepository(trx: Transactor[IO]) {
       _ <-
         sql"""
             INSERT INTO games (gameId, gameCertificate, boardId, whiteUserId, blackUserId, gameState)
-            VALUES ($gameId, ${payload.gameCertificate}, $boardId, ${payload.whiteUserId}, ${payload.blackUserId}, 'PENDING')
+            VALUES ($gameId, ${payload.gameCertificate}, $boardId, ${payload.whiteUserId}, ${payload.blackUserId}, $ON_GOING)
           """.update.run
 
       game <- sql"""
@@ -81,6 +82,25 @@ class GameRepository(trx: Transactor[IO]) {
         PaginatedGetGameByUserIdResponseRepo(games, nextOffset, total)
       }.transact(trx).attempt
     }
+  }
+
+  def patchGameState(payload: PatchGameStatePayload): EitherT[IO, Throwable, GameModel] = {
+    val program = for {
+      _ <-
+        sql"""
+          UPDATE games
+          SET gameState = ${payload.gameState}
+          WHERE gameId = ${payload.gameId}
+        """.update.run
+
+      game <- sql"""
+          SELECT *
+          FROM games
+          WHERE gameId = ${payload.gameId}
+        """.query[GameModel].unique
+    } yield game
+
+    EitherT(program.transact(trx).attempt)
   }
 }
 
