@@ -269,7 +269,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
       .subflatMap(_.toRight(GameNotFound))
 
   private def getUser(userId: String): EitherT[IO, Throwable, UserModel] =
-    userRepository.getUserById(GetUserPayload(userId))
+    userRepository.getUserById(GetUserByIdPayloadRepo(userId))
       .subflatMap(_.toRight(UserNotFound))
 
   private def createGame(gameCertificate: String, whiteUserId: String, blackUserId: String): EitherT[IO, Throwable, GameModel] =
