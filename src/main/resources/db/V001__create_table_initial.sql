@@ -20,7 +20,7 @@ CREATE TABLE `games` (
     `boardId` CHAR(36) NOT NULL,
     `whiteUserId` CHAR(36) NOT NULL,
     `blackUserId` CHAR(36) NOT NULL,
-    `winner` ENUM('WHITE', 'BLACK', 'DRAW') NULL,
+    `winner` ENUM('WHITE_WINNER', 'BLACK_WINNER', 'DRAW') NULL,
     `gameState` ENUM('PENDING', 'ON_GOING', 'FINISHED') NOT NULL,
     `createdAt` DATETIME NOT NULL DEFAULT NOW(),
     `updatedAt` DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW(),
