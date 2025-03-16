@@ -4,8 +4,8 @@ import cats.data.EitherT
 import cats.effect.IO
 import com.shogi8017.app.exceptions.IncorrectUsernameOrPassword
 import com.shogi8017.app.models.{UserModel, UserModelWithPassword}
-import com.shogi8017.app.repository.{CreateUserPayload, FindUserByUsernamePayload, PaginatedSearchUserPayloadRepo, PaginatedSearchUserResponseRepo, UserRepository}
-import com.shogi8017.app.routes.{PaginatedSearchUserPayload, PaginatedSearchUserResponse, UserLoginPayload, UserSignUpPayload}
+import com.shogi8017.app.repository.{CreateUserPayload, FindUserByUsernamePayload, GetUserByIdPayloadRepo, PaginatedSearchUserPayloadRepo, PaginatedSearchUserResponseRepo, UserRepository}
+import com.shogi8017.app.routes.{GetUserByIdPayload, PaginatedSearchUserPayload, PaginatedSearchUserResponse, UserLoginPayload, UserSignUpPayload}
 import org.mindrot.jbcrypt.BCrypt
 
 class UserService(userRepository: UserRepository) {
@@ -37,6 +37,11 @@ class UserService(userRepository: UserRepository) {
     val searchPayload = PaginatedSearchUserPayloadRepo.fromPaginatedSearchUserPayload(payload)
     userRepository.paginatedSearchUser(searchPayload)
       .map(PaginatedSearchUserResponseRepo.toPaginatedSearchUserResponse)
+  }
+  
+  def getUserById(payload: GetUserByIdPayload): EitherT[IO, Throwable, Option[UserModel]] = {
+    val getUserPayload = GetUserByIdPayloadRepo.fromGetUserByIdPayload(payload)
+    userRepository.getUserById(getUserPayload)
   }
 }
 

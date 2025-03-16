@@ -27,7 +27,7 @@ class UserRepository(trx: Transactor[IO]) {
     }
   }
 
-  def getUserById(payload: GetUserPayload): EitherT[IO, Throwable, Option[UserModel]] =
+  def getUserById(payload: GetUserByIdPayloadRepo): EitherT[IO, Throwable, Option[UserModel]] =
     EitherT {
       sql"SELECT * FROM users u WHERE u.userId = ${payload.userId}"
         .query[UserModel]

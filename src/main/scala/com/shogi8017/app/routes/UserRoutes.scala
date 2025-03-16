@@ -1,17 +1,27 @@
 package com.shogi8017.app.routes
 
+import cats.data.EitherT
 import cats.effect.IO
 import com.shogi8017.app.models.UserModel
 import com.shogi8017.app.services.UserService
+import io.circe.Encoder
 import io.circe.generic.auto.*
 import io.circe.syntax.*
-import org.http4s.AuthedRoutes
+import org.http4s.{AuthedRoutes, Response}
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.dsl.io.*
 
 case class UserRoutes(userService: UserService) {
+
+  private def handleResponse[A: Encoder](result: EitherT[IO, Throwable, A]): IO[Response[IO]] = {
+    result.value.flatMap {
+      case Right(data) => Ok(data.asJson)
+      case Left(error) => InternalServerError(s"Error: ${error.toString}")
+    }
+  }
+
   def getUserRoutes: AuthedRoutes[UserModel, IO] = AuthedRoutes.of[UserModel, IO] {
-    case GET -> Root / "user" / "search" :? SearchQueryParam(searchQuery) +& OffsetParam(offset) +& LimitParam(limit)  +& ExcludeRequestingUserParam(excludeRequestingUser) as user =>
+    case GET -> Root / "user" / "search" :? SearchQueryParam(searchQuery) +& OffsetParam(offset) +& LimitParam(limit) +& ExcludeRequestingUserParam(excludeRequestingUser) as user =>
       val formattedSearchQuery = searchQuery
       val formattedOffset = offset.getOrElse(0)
       val formattedExcludeRequestingUser = excludeRequestingUser.getOrElse(true)
@@ -20,19 +30,17 @@ case class UserRoutes(userService: UserService) {
 
       val excludingUserIds = if (formattedExcludeRequestingUser) List(user.userId) else List.empty
 
-      for {
-        response <- userService.paginatedSearchUser(PaginatedSearchUserPayload(formattedSearchQuery, formattedOffset, formattedLimit, excludingUserIds)).value
+      handleResponse(
+        userService.paginatedSearchUser(PaginatedSearchUserPayload(
+          formattedSearchQuery, formattedOffset, formattedLimit, excludingUserIds
+        ))
+      )
 
-        res <- response match {
-          case Right(searchResponse) => Ok(searchResponse.asJson)
-          case Left(error) => InternalServerError(s"Error: ${error.toString}")
-        }
-      } yield res
+    case GET -> Root / "user" / userId as user =>
+      handleResponse(userService.getUserById(GetUserByIdPayload(userId)))
   }
 }
 
 object UserRoutes {
-  def of(userService: UserService): UserRoutes = {
-    UserRoutes(userService)
-  }
+  def of(userService: UserService): UserRoutes = UserRoutes(userService)
 }
