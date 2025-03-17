@@ -102,6 +102,30 @@ class GameRepository(trx: Transactor[IO]) {
 
     EitherT(program.transact(trx).attempt)
   }
+
+  def updateGame(payload: GameModel): EitherT[IO, Throwable, GameModel] = {
+    val program = for {
+      _ <-
+        sql"""
+          UPDATE games
+          SET gameCertificate = ${payload.gameCertificate},
+              boardId = ${payload.boardId},
+              whiteUserId = ${payload.whiteUserId},
+              blackUserId = ${payload.blackUserId},
+              winner = ${payload.winner},
+              gameState = ${payload.gameState}
+          WHERE gameId = ${payload.gameId}
+        """.update.run
+
+      game <- sql"""
+          SELECT *
+          FROM games
+          WHERE gameId = ${payload.gameId}
+        """.query[GameModel].unique
+    } yield game
+
+    EitherT(program.transact(trx).attempt)
+  }
 }
 
 object GameRepository {

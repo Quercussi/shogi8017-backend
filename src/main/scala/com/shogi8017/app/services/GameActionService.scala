@@ -5,7 +5,7 @@ import cats.effect.std.Queue
 import cats.effect.{Concurrent, IO}
 import cats.syntax.all.*
 import com.shogi8017.app.exceptions.*
-import com.shogi8017.app.models.enumerators.{ActionType, GameState}
+import com.shogi8017.app.models.enumerators.{ActionType, GameState, GameWinner}
 import com.shogi8017.app.models.{BoardHistoryModel, GameModel, InvitationModel, UserModel}
 import com.shogi8017.app.repository.*
 import com.shogi8017.app.services.GameActionService.{validateAndSetUpBoard, validatePlayer}
@@ -165,81 +165,104 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
   }
 
   private def onMakeMoveRequest(request: MakeMoveRequestContext, clientRegistry: GameActionAPIRegistry): IO[Unit] = {
-    processOnBoardAction(request, clientRegistry, request.payload.move)
+    onBoardExecutionAction(request, clientRegistry, request.payload.move)
   }
 
   private def onMakeDropRequest(request: MakeDropRequestContext, clientRegistry: GameActionAPIRegistry): IO[Unit] = {
-    processOnBoardAction(request, clientRegistry, request.payload.drop)
+    onBoardExecutionAction(request, clientRegistry, request.payload.drop)
   }
 
   private def onResignRequest(request: ResignRequestContext, clientRegistry: GameActionAPIRegistry): IO[Unit] = {
-    val gameCertificate = request.context.gameCertificate
     val requestingUserId = request.context.user.userId
-    val resignAction = request.payload
 
-    case class ResignResultWithContestantsId(whiteId: String, blackId: String, resigningPlayer: Player)
-
-    val resignResult: EitherT[IO, Throwable, ResignResultWithContestantsId] = for {
-      game <- getGame(gameCertificate)
-      resigningPlayer <- validatePlayer(game.whiteUserId, game.blackUserId, requestingUserId)
-      executionHistories <- getExecutionHistories(game)
-      newMoveNumber = executionHistories.lastOption.fold(1)(_.actionNumber + 1)
-      _ <- createExecutionHistories(game.boardId, ExecutionAction(resigningPlayer, ResignAction()), newMoveNumber)
-      _ <- gameRepository.patchGameState(PatchGameStatePayload(game.gameId, GameState.FINISHED))
-    } yield ResignResultWithContestantsId(game.whiteUserId, game.blackUserId, resigningPlayer)
-
-
-    resignResult.value.flatMap {
-      case Right(result) =>
-        val gameEventWinnerPair = GameEventWinnerPair(Some(RESIGNATION), Some(toWinner(opponent(result.resigningPlayer))))
-        notifyContestants(List.empty, gameEventWinnerPair, result.whiteId, result.blackId, clientRegistry)
-      case Left(error) =>
-        publishToTopic(requestingUserId, clientRegistry, InvalidGameActionEvent(error.toString))
-    }
+    processResignation(request.context.gameCertificate, requestingUserId)
+      .value
+      .flatMap {
+        case Right(result) =>
+          val gameEventWinnerPair = GameEventWinnerPair(Some(RESIGNATION), Some(result.winner))
+          notifyContestants(List.empty, gameEventWinnerPair, result.whiteId, result.blackId, clientRegistry)
+        case Left(error) =>
+          publishToTopic(requestingUserId, clientRegistry, InvalidGameActionEvent(error.toString))
+      }
   }
 
-  private def processOnBoardAction(
-    requestContext: GameActionRequestContext,
-    clientRegistry: GameActionAPIRegistry,
-    action: OnBoardAction,
-  ): IO[Unit] = {
-    val gameCertificate = requestContext.context.gameCertificate
-    val requestingUser = requestContext.context.user
-    val requestingUserId = requestingUser.userId
+  private case class ResignResult(whiteId: String, blackId: String, resigningPlayer: Player, winner: GameWinner)
 
-    case class ResultWrapper(result: MoveResult, whiteId: String, blackId: String)
-
-    val processingPipeline = for {
+  private def processResignation(gameCertificate: String, userId: String): EitherT[IO, Throwable, ResignResult] =
+    for {
       game <- getGame(gameCertificate)
-      player <- validatePlayer(game.whiteUserId, game.blackUserId, requestingUserId)
+      resigningPlayer <- validatePlayer(game.whiteUserId, game.blackUserId, userId)
+      _ <- recordResignation(game.boardId, resigningPlayer)
+      winner = toWinner(opponent(resigningPlayer))
+      _ <- finalizeGame(game, winner)
+    } yield ResignResult(game.whiteUserId, game.blackUserId, resigningPlayer, winner)
+
+  private def recordResignation(boardId: String, player: Player): EitherT[IO, Throwable, BoardHistoryModel] =
+    for {
+      histories <- boardHistoryRepository.getBoardHistories(GetBoardHistoriesPayload(boardId))
+      moveNumber = histories.lastOption.fold(1)(_.actionNumber + 1)
+      result <- createExecutionHistories(boardId, ExecutionAction(player, ResignAction()), moveNumber)
+    } yield result
+
+  private def finalizeGame(game: GameModel, winner: GameWinner): EitherT[IO, Throwable, GameModel] = {
+    val updatedGame = game.copy(gameState = GameState.FINISHED, winner = Some(winner))
+    gameRepository.updateGame(updatedGame)
+  }
+
+  private def onBoardExecutionAction(requestContext: GameActionRequestContext, clientRegistry: GameActionAPIRegistry, action: OnBoardAction): IO[Unit] = {
+    val requestingUserId = requestContext.context.user.userId
+
+    processOnBoardAction(requestContext.context.gameCertificate, requestingUserId, action)
+      .value
+      .flatMap {
+        case Right(result) =>
+          notifyContestants(result.transitions, result.gameEvent, result.whiteId, result.blackId, clientRegistry)
+        case Left(error) =>
+          publishToTopic(requestingUserId, clientRegistry, InvalidGameActionEvent(error.toString))
+      }
+  }
+
+  private case class BoardActionResult(transitions: StateTransitionList, gameEvent: GameEventWinnerPair, whiteId: String, blackId: String)
+  
+  private def processOnBoardAction(gameCertificate: String, userId: String, action: OnBoardAction): EitherT[IO, Throwable, BoardActionResult] =
+    for {
+      game <- getGame(gameCertificate)
+      player <- validatePlayer(game.whiteUserId, game.blackUserId, userId)
       executionHistories <- getExecutionHistories(game)
       board <- validateAndSetUpBoard(executionHistories, game.boardId)
 
-      actionResult <- EitherT.fromEither[IO](
-        Board.executeOnBoardAction(board, player, action).toEither
-      )
+      actionResult <- executeAction(board, player, action)
 
+      _ <- updateGameHistory(game, player, action, actionResult)
+      _ <- handleGameEndingConditions(game, actionResult._4)
+    } yield BoardActionResult(transitions = actionResult._2, gameEvent = actionResult._4, whiteId = game.whiteUserId, blackId = game.blackUserId)
+
+  private def executeAction(board: Board, player: Player, action: OnBoardAction): EitherT[IO, Throwable, MoveResult] =
+    EitherT.fromEither[IO](
+      Board.executeOnBoardAction(board, player, action).toEither
+    )
+
+  private def updateGameHistory(game: GameModel, player: Player, action: OnBoardAction, actionResult: MoveResult): EitherT[IO, Throwable, BoardHistoryModel] =
+    for {
+      executionHistories <- getExecutionHistories(game)
       newMoveNumber = executionHistories.lastOption.fold(1)(_.actionNumber + 1)
-      _ <- createExecutionHistories(
+      historyEntry <- createExecutionHistories(
         game.boardId,
         ExecutionAction(player, action),
-        newMoveNumber,
+        newMoveNumber
       )
-      
-      endingGameStates = Set(GameEvent.STALEMATE, GameEvent.IMPASSE, GameEvent.CHECKMATE, GameEvent.RESIGNATION)
-      _ <- if(actionResult._4.gameEvent.exists(event => endingGameStates.contains(event))) {
-        gameRepository.patchGameState(PatchGameStatePayload(game.gameId, GameState.FINISHED))
-      } else {
-        EitherT.pure[IO, Throwable](())
-      }
-    } yield ResultWrapper(actionResult, game.whiteUserId, game.blackUserId)
+    } yield historyEntry
+  
+  private def handleGameEndingConditions(game: GameModel, gameEventWinnerPair: GameEventWinnerPair): EitherT[IO, Throwable, Unit] = {
+    val gameEndingEvents = Set(GameEvent.STALEMATE, GameEvent.IMPASSE, GameEvent.CHECKMATE, GameEvent.RESIGNATION)
 
-    processingPipeline.value.flatMap {
-      case Right(ResultWrapper(result, whiteId, blackId)) =>
-        notifyContestants(result._2, result._4, whiteId, blackId, clientRegistry)
-      case Left(error) =>
-        publishToTopic(requestingUserId, clientRegistry, InvalidGameActionEvent(error.toString))
-    }
+    gameEventWinnerPair.gameEvent
+      .filter(gameEndingEvents.contains)
+      .map { _ =>
+        val updatedGame = game.copy(gameState = GameState.FINISHED, winner = gameEventWinnerPair.winner)
+        gameRepository.updateGame(updatedGame).void
+      }
+      .getOrElse(EitherT.pure[IO, Throwable](()))
   }
 
   private def notifyContestants(
