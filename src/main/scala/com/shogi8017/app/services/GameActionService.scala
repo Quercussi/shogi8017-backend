@@ -128,7 +128,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
         blackUser <- getUser(invitation.blackPlayerId)
         game <- getGame(invitation.gameCertificate)
         executionHistories <- getExecutionHistories(game)
-        board <- validateAndSetUpBoard(executionHistories, game.boardId)
+        board <- EitherT.fromEither[IO](validateAndSetUpBoard(executionHistories, game.boardId))
         payload <- EitherT.liftF(IO(Board.convertToBoardConfigurationEvent(
           board,
           whiteUser,
@@ -229,18 +229,16 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
       game <- getGame(gameCertificate)
       player <- validatePlayer(game.whiteUserId, game.blackUserId, userId)
       executionHistories <- getExecutionHistories(game)
-      board <- validateAndSetUpBoard(executionHistories, game.boardId)
+      board <- EitherT.fromEither[IO](validateAndSetUpBoard(executionHistories, game.boardId))
 
-      actionResult <- executeAction(board, player, action)
+      actionResult <- EitherT.fromEither[IO](executeAction(board, player, action))
 
       _ <- updateGameHistory(game, player, action, actionResult)
       _ <- handleGameEndingConditions(game, actionResult._4)
     } yield BoardActionResult(transitions = actionResult._2, gameEvent = actionResult._4, whiteId = game.whiteUserId, blackId = game.blackUserId)
 
-  private def executeAction(board: Board, player: Player, action: OnBoardAction): EitherT[IO, Throwable, MoveResult] =
-    EitherT.fromEither[IO](
-      Board.executeOnBoardAction(board, player, action).toEither
-    )
+  private def executeAction(board: Board, player: Player, action: OnBoardAction): Either[Throwable, MoveResult] =
+    Board.executeOnBoardAction(board, player, action).toEither
 
   private def updateGameHistory(game: GameModel, player: Player, action: OnBoardAction, actionResult: MoveResult): EitherT[IO, Throwable, BoardHistoryModel] =
     for {
@@ -362,14 +360,21 @@ object GameActionService {
       AppExceptionNel.singleton(UserNotInGame)
     )
 
-  private def validateAndSetUpBoard(executionHistories: List[BoardHistoryModel], boardId: String): EitherT[IO, AppExceptionNel, Board] = {
-    EitherT.fromEither[IO](
-      executionHistories                                    // List[BoardHistoryModel]
-        .map(ExecutionAction.convertToExecuteAction)        // List[Validated[InvalidBoardHistory, ExecutionAction]]
-        .traverse(_.toValidatedNel)                         // ValidatedNel[InvalidBoardHistory, List[ExecutionAction]]
-        .andThen(Board.fromExecutionList(_).toValidatedNel) // ValidatedNel[AppException, Board]
-        .leftMap(e => AppExceptionNel(e))                   // Validated[AppExceptionNel, Board]
-        .toEither                                           // Either[AppExceptionNel, Board]
-    )
+  private def validateAndSetUpBoard(executionHistories: List[BoardHistoryModel], boardId: String): Either[AppExceptionNel, Board] = {
+    convertBoardHistoryToExecutionActionList(executionHistories).flatMap { actions =>
+      Board.fromExecutionList(actions)
+        .toValidatedNel
+        .leftMap(e => AppExceptionNel(e))
+        .toEither
+    }
   }
+  
+  def convertBoardHistoryToExecutionActionList(executionHistories: List[BoardHistoryModel]): Either[AppExceptionNel, List[ExecutionAction]] = {
+    executionHistories                                    
+      .map(ExecutionAction.convertToExecuteAction)        
+      .traverse(_.toValidatedNel)
+      .leftMap(e => AppExceptionNel(e))
+      .toEither
+  }
+
 }
