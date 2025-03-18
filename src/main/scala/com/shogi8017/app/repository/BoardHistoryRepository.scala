@@ -14,7 +14,7 @@ class BoardHistoryRepository(trx: Transactor[IO]) {
       sql"""
         SELECT *
         FROM boardHistories
-        WHERE boardId = ${payload.gameId}
+        WHERE boardId = ${payload.boardId}
         ORDER BY actionNumber
       """.query[BoardHistoryModel].to[List].transact(trx).attempt
     }

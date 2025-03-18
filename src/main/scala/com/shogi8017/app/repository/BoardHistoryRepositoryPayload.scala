@@ -1,10 +1,11 @@
 package com.shogi8017.app.repository
 
+import com.shogi8017.app.models.BoardHistoryModel
 import com.shogi8017.app.models.enumerators.ActionType
 import com.shogi8017.app.services.logics.Player
 import com.shogi8017.app.services.logics.pieces.PieceType
 
-case class GetBoardHistoriesPayload(gameId: String)
+case class GetBoardHistoriesPayload(boardId: String)
 
 case class CreateBoardHistoryPayload(
   boardId: String,
