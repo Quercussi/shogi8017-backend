@@ -24,6 +24,9 @@ case class GameRoutes(gameService: GameService) {
           case Left(error) => InternalServerError(s"Error: ${error.toString}")
         }
       } yield res
+
+    case GET -> Root / "game" / "defaultConfiguration" as user =>
+      Ok(Board.convertToBoardConfiguration(Board.defaultInitialPosition).asJson)
   }
 }
 

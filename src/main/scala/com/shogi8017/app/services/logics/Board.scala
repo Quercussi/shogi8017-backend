@@ -7,15 +7,16 @@ import com.shogi8017.app.exceptions.*
 import com.shogi8017.app.models.UserModel
 import com.shogi8017.app.models.enumerators.GameWinner
 import com.shogi8017.app.models.enumerators.GameWinner.{BLACK_WINNER, DRAW, WHITE_WINNER}
+import com.shogi8017.app.routes.{BoardConfiguration, PieceHandCount, PlayerList, PositionPiecePair}
 import com.shogi8017.app.services.*
 import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE, IMPASSE, RESIGNATION, STALEMATE}
-import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER, toWinner}
+import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER, opponent, toWinner}
 import com.shogi8017.app.services.logics.actions.*
 import com.shogi8017.app.services.logics.pieces.*
 import com.shogi8017.app.services.logics.pieces.Piece.validateAndApplyAction
 import com.shogi8017.app.services.logics.pieces.PieceType.getPieceByPieceType
 import com.shogi8017.app.utils.Multiset
-import com.shogi8017.app.websocketPayloads.{BoardConfigurationEvent, PieceHandCount, PlayerList, PositionPiecePair}
+import com.shogi8017.app.websocketPayloads.{BoardConfigurationEvent}
 
 case class Board(
   piecesMap: Map[Position, Piece],
@@ -175,7 +176,7 @@ object Board {
   }
 
   def executeResignAction(board: Board, player: Player, resignAction: ResignAction): Validated[GameValidationException, MoveResult] = {
-    val winner: GameWinner = if (player == WHITE_PLAYER) WHITE_WINNER else BLACK_WINNER
+    val winner = toWinner(opponent(player))
     val gameEvent = GameEventWinnerPair(Some(RESIGNATION), Some(winner))
     val algebraicNotation = "1-0" // TODO: implement proper algebraic notation
 
@@ -320,8 +321,8 @@ object Board {
   def isPlayerHandContains(board: Board, player: Player, pieceType: PieceType): Boolean = {
     board.hands(player).contains(pieceType)
   }
-
-  def convertToBoardConfigurationEvent(board: Board, whitePlayer: UserModel, blackPlayer: UserModel): BoardConfigurationEvent = {
+  
+  def convertToBoardConfiguration(board: Board): BoardConfiguration = {
     val boardConfiguration = board.piecesMap.map {
       case (position, piece) =>
         PositionPiecePair(position, piece.pieceType, piece.owner)
@@ -334,10 +335,15 @@ object Board {
             PieceHandCount(player, pieceType, count)
         }
     }.toList
+    
+    BoardConfiguration(boardConfiguration, handPieceCounts)
+  }
 
+  def convertToBoardConfigurationEvent(board: Board, whitePlayer: UserModel, blackPlayer: UserModel): BoardConfigurationEvent = {
+    val boardConfiguration = convertToBoardConfiguration(board)
     val playerList = PlayerList(whitePlayer, blackPlayer)
 
-    BoardConfigurationEvent(playerList, boardConfiguration, handPieceCounts)
+    BoardConfigurationEvent(playerList, boardConfiguration.board, boardConfiguration.handPieceCounts)
   }
 }
 
