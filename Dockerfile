@@ -24,6 +24,6 @@ WORKDIR /app
 
 COPY --from=build /app/target/scala-3.6.3/shogi8017-backend-assembly-0.1.0-SNAPSHOT.jar /app/app.jar
 
-EXPOSE 8018
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
