@@ -45,7 +45,7 @@ object Server {
     server <- EmberServerBuilder
       .default[IO]
       .withHost(ipv4"0.0.0.0")
-      .withPort(port"8018")
+      .withPort(port"8080")
       .withHttpWebSocketApp { wsb =>
         (healthRoute <+>
           UnifiedRoutes.instantiateRoutes(wsb, wsBuffer, middlewareCollection, serviceCollection).getRoutes)
