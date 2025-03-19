@@ -8,6 +8,7 @@ import com.shogi8017.app.exceptions.*
 import com.shogi8017.app.models.enumerators.{ActionType, GameState, GameWinner}
 import com.shogi8017.app.models.{BoardHistoryModel, GameModel, InvitationModel, UserModel}
 import com.shogi8017.app.repository.*
+import com.shogi8017.app.routes.MoveResultReduced
 import com.shogi8017.app.services.GameActionService.{validateAndSetUpBoard, validatePlayer}
 import com.shogi8017.app.services.logics.GameEvent.RESIGNATION
 import com.shogi8017.app.services.logics.Player.*
@@ -126,7 +127,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
       val currentBoard = for {
         whiteUser <- getUser(invitation.whitePlayerId)
         blackUser <- getUser(invitation.blackPlayerId)
-        game <- getGame(invitation.gameCertificate)
+        game <- getGameEither(invitation.gameCertificate)
         executionHistories <- getExecutionHistories(game)
         board <- EitherT.fromEither[IO](validateAndSetUpBoard(executionHistories, game.boardId))
         payload <- EitherT.liftF(IO(Board.convertToBoardConfigurationEvent(
@@ -190,7 +191,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
 
   private def processResignation(gameCertificate: String, userId: String): EitherT[IO, Throwable, ResignResult] =
     for {
-      game <- getGame(gameCertificate)
+      game <- getGameEither(gameCertificate)
       resigningPlayer <- validatePlayer(game.whiteUserId, game.blackUserId, userId)
       _ <- recordResignation(game.boardId, resigningPlayer)
       winner = toWinner(opponent(resigningPlayer))
@@ -226,7 +227,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
   
   private def processOnBoardAction(gameCertificate: String, userId: String, action: OnBoardAction): EitherT[IO, Throwable, BoardActionResult] =
     for {
-      game <- getGame(gameCertificate)
+      game <- getGameEither(gameCertificate)
       player <- validatePlayer(game.whiteUserId, game.blackUserId, userId)
       executionHistories <- getExecutionHistories(game)
       board <- EitherT.fromEither[IO](validateAndSetUpBoard(executionHistories, game.boardId))
@@ -285,7 +286,7 @@ class GameActionService(gameRepository: GameRepository, invitationRepository: In
     invitationRepository.updateInvitation(UpdateInvitationPayload(invitationModel))
   }
 
-  private def getGame(gameCertificate: String): EitherT[IO, Throwable, GameModel] =
+  private def getGameEither(gameCertificate: String): EitherT[IO, Throwable, GameModel] =
     gameRepository.getGame(GetGamePayload(gameCertificate))
       .subflatMap(_.toRight(GameNotFound))
 
@@ -377,4 +378,18 @@ object GameActionService {
       .toEither
   }
 
+  def convertExecutionActionsToMoveResults(actions: List[ExecutionAction]): Either[GameValidationException, List[MoveResultReduced]] = {
+    type EitherGVE[A] = Either[GameValidationException, A]
+    
+    actions.foldLeft[Either[GameValidationException, (Board, List[MoveResultReduced])]](Right((Board.defaultInitialPosition, List.empty))) {
+      case (acc, action) =>
+        acc.flatMap { case (currentBoard, results) =>
+          Board.executionAction(currentBoard, action.player, action.playerAction).toEither.map { moveResult =>
+            val (newBoard, stateTransitions, algebraicNotation, gameEvent) = moveResult
+            val reducedResult = MoveResultReduced(action.player, stateTransitions, algebraicNotation, gameEvent)
+            (newBoard, results :+ reducedResult)
+          }
+        }
+    }.map(_._2)
+  }
 }

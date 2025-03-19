@@ -7,6 +7,9 @@ import com.shogi8017.app.services.logics.pieces.PieceType
 
 case class GetBoardHistoriesPayload(boardId: String)
 
+case class GetBoardHistoriesPaginatedPayload(boardId: String, limit: Int)
+case class GetBoardHistoriesPaginatedResponse(boardHistories: List[BoardHistoryModel],  nextOffset: Int, total: Int)
+
 case class CreateBoardHistoryPayload(
   boardId: String,
   actionNumber: Int,

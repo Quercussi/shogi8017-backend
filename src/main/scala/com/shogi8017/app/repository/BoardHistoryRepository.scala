@@ -3,9 +3,10 @@ package com.shogi8017.app.repository
 import cats.data.EitherT
 import cats.effect.IO
 import cats.effect.std.UUIDGen
+import cats.implicits.*
 import com.shogi8017.app.models.BoardHistoryModel
-import doobie.*
 import doobie.implicits.*
+import doobie.util.transactor.Transactor
 
 class BoardHistoryRepository(trx: Transactor[IO]) {
 
@@ -17,6 +18,29 @@ class BoardHistoryRepository(trx: Transactor[IO]) {
         WHERE boardId = ${payload.boardId}
         ORDER BY actionNumber
       """.query[BoardHistoryModel].to[List].transact(trx).attempt
+    }
+  }
+
+  def getBoardHistoriesPaginated(payload: GetBoardHistoriesPaginatedPayload): EitherT[IO, Throwable, GetBoardHistoriesPaginatedResponse] = {
+    val boardHistoriesQuery = sql"""
+      SELECT *
+      FROM boardHistories
+      WHERE boardId = ${payload.boardId}
+      ORDER BY actionNumber
+      LIMIT ${payload.limit}
+    """.query[BoardHistoryModel].to[List]
+
+    val countQuery = sql"""
+      SELECT COUNT(*)
+      FROM boardHistories
+      WHERE boardId = ${payload.boardId}
+    """.query[Int].unique
+
+    EitherT {
+      (boardHistoriesQuery, countQuery).mapN { (histories, total) =>
+        val nextOffset = if (payload.limit < total) payload.limit else -1
+        GetBoardHistoriesPaginatedResponse(histories, nextOffset, total)
+      }.transact(trx).attempt
     }
   }
 
