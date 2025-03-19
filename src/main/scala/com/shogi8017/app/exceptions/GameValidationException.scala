@@ -1,0 +1,27 @@
+package com.shogi8017.app.exceptions
+
+sealed trait GameValidationException extends AppException
+
+sealed trait ActionValidationException extends GameValidationException
+case object UnknownAction extends ActionValidationException
+case object IllegalMove extends ActionValidationException
+case object IllegalDrop extends ActionValidationException
+case object UnoccupiedPosition extends ActionValidationException
+case object NotOwnerOfPiece extends ActionValidationException
+case object NoMove extends ActionValidationException
+case object OutOfTurn extends ActionValidationException
+case object OutOfBoard extends ActionValidationException
+
+sealed trait IllegalPromotion extends ActionValidationException
+case object ExpectingPromotion extends IllegalPromotion
+case object CannotPromote extends IllegalPromotion
+case object IncorrectPromotionScenario extends IllegalPromotion
+
+sealed trait IllegalDrop extends ActionValidationException
+case object OccupiedDrop extends IllegalDrop
+case object NoPieceInHand extends IllegalDrop
+case object InvalidDropPiece extends IllegalDrop
+
+sealed trait GameStateException extends GameValidationException
+case object NoKingException extends GameStateException
+case object GameAlreadyEndedException extends GameStateException
