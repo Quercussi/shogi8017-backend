@@ -1,8 +1,10 @@
 package com.shogi8017.app.services.logics
 
+import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import com.shogi8017.app.exceptions.GameValidationException
 import com.shogi8017.app.services.logics.Board.executeOnBoardAction
-import com.shogi8017.app.services.logics.actions.{DropAction, MoveAction, OnBoardAction}
+import com.shogi8017.app.services.logics.actions.{DropAction, ExecutionAction, MoveAction, OnBoardAction}
 import com.shogi8017.app.services.logics.pieces.Piece
 import org.scalatest.Assertions.fail
 
@@ -42,5 +44,9 @@ object LogicTestUtils {
         fail("Move should be invalid")
       case Invalid(e) => assert(e == expectedException, s"Expected exception: $expectedException, but got: $e")
     }
+  }
+
+  def fromMovesList(moveList: List[ExecutionAction]): Validated[GameValidationException, Board] = {
+    Board.fromExecutionList(moveList)
   }
 }

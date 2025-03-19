@@ -12,7 +12,7 @@ case class PaginatedGetGameByUserIdResponse(games: List[GameModel], count: Int, 
 case class PaginatedGetGameHistoryPayload(gameCertificate: String, offset: Int, limit: Int)
 case class PaginatedGetGameHistoryResponse(executionHistories: List[MoveResultReduced], count: Int, nextOffset: Int, total: Int)
 
-case class BoardConfiguration(board: List[PositionPiecePair], handPieceCounts: List[PieceHandCount])
+case class BoardConfiguration(board: List[PositionPiecePair], handPieceCounts: List[PieceHandCount], currentPlayerTurn: Player)
 
 case class MoveResultReduced(player: Player, stateTransitionList: StateTransitionList, algebraicNotation: AlgebraicNotation, gameEventWinnerPair: GameEventWinnerPair)
 

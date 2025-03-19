@@ -25,7 +25,7 @@ class BishopTest extends AnyFunSuite:
         Position(4, 6) -> Bishop(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = generateDiagonalPositions(Position(4, 6))
     testSeqBlack.foreach(pos => testAction(BLACK_PLAYER, MoveAction(Position(4, 6), pos), Bishop(BLACK_PLAYER), s0))
@@ -41,7 +41,7 @@ class BishopTest extends AnyFunSuite:
         Position(4, 6) -> Bishop(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val blackReachablePositions = generateDiagonalPositions(Position(4, 6))
     val testSeqBlack = getAllPosition.filterNot(blackReachablePositions.contains)
@@ -59,7 +59,7 @@ class BishopTest extends AnyFunSuite:
         Position(7, 7) -> Bishop(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(7, 7), Position(2, 2)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(8, 8)), IllegalMove, s1)
@@ -72,7 +72,7 @@ class BishopTest extends AnyFunSuite:
         Position(7, 7) -> Bishop(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val r1 = testAction(BLACK_PLAYER, MoveAction(Position(7, 7), Position(4, 4)), Bishop(BLACK_PLAYER), s0)
     assert(r1.piecesMap.size == 3)
@@ -94,7 +94,7 @@ class BishopTest extends AnyFunSuite:
         Position(2, 6) -> Knight(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(2, 6)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(6, 6)), IllegalMove, s1)
@@ -107,7 +107,7 @@ class BishopTest extends AnyFunSuite:
         Position(4, 6) -> Bishop(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(4, 4)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(4, 6)), IllegalMove, s1)
@@ -122,7 +122,7 @@ class BishopTest extends AnyFunSuite:
         Position(1, 1) -> Bishop(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack1 = generateDiagonalPositions(Position(1, 4)).filter(_.y <= 3)
     testSeqBlack1.foreach(pos => testAction(BLACK_PLAYER, MoveAction(Position(1, 4), pos, false), Bishop(BLACK_PLAYER), s0))
@@ -148,7 +148,7 @@ class BishopTest extends AnyFunSuite:
         Position(4, 6) -> Bishop(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = generateDiagonalPositions(Position(4, 6)).filter(_.y >= 4)
     testSeqBlack.foreach(pos => testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), pos, true), IncorrectPromotionScenario, s0))
@@ -164,7 +164,7 @@ class BishopTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(BISHOP)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9

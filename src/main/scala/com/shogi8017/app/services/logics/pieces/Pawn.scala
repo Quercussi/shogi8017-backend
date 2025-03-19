@@ -25,7 +25,7 @@ case class Pawn(owner: Player) extends Piece with UnitMovingPieceMethods with Dr
     lazy val tempBoard = board.copy(
       piecesMap = board.piecesMap + (drop.position -> this),
       hands = board.hands.updated(this.owner, board.hands.getOrElse(this.owner, Multiset.empty) - this.pieceType),
-      auxiliaryState = board.auxiliaryState.copy(lastAction = Some(Actor(this.owner)))
+      currentPlayerTurn = Player.opponent(this.owner)
     )
 
     lazy val dropPawnMateValidation = !Board.isCheckmated(tempBoard, Player.opponent(this.owner))

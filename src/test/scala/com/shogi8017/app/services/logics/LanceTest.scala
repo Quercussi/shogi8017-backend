@@ -17,7 +17,7 @@ class LanceTest extends AnyFunSuite:
         Position(6, 6) -> Lance(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     (2 to 5).foreach(col =>
       testAction(BLACK_PLAYER, MoveAction(Position(6, 6), Position(6, col)), Lance(BLACK_PLAYER), s0)
@@ -34,7 +34,7 @@ class LanceTest extends AnyFunSuite:
         Position(6, 4) -> Lance(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     (5 to 9).foreach(col =>
       testActionError(BLACK_PLAYER, MoveAction(Position(6, 4), Position(6, col)), IllegalMove, s0)
@@ -51,7 +51,7 @@ class LanceTest extends AnyFunSuite:
       (Position(6, 6) -> Lance(BLACK_PLAYER))
 
     val newBoard1 = Board(newPieces)
-    val newBoard2 = Board(newPieces, auxiliaryState = emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard2 = Board(newPieces, auxiliaryState = emptyBoard.auxiliaryState, currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(6, 6), Position(2, 4)), IllegalMove, newBoard1)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(5, 7)), IllegalMove, newBoard2)
@@ -64,7 +64,7 @@ class LanceTest extends AnyFunSuite:
         Position(4, 5) -> Lance(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(4, 5), Position(4, 3)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(4, 6)), IllegalMove, s1)
@@ -77,7 +77,7 @@ class LanceTest extends AnyFunSuite:
         Position(4, 9) -> Lance(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val r0 = testAction(BLACK_PLAYER, MoveAction(Position(4, 9), Position(4, 2), false), Lance(BLACK_PLAYER), s0)
     assert(r0.piecesMap.size == 3)
@@ -99,7 +99,7 @@ class LanceTest extends AnyFunSuite:
         Position(6, 8) -> Lance(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(6, 8), Position(6, 2)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 2), Position(4, 8)), IllegalMove, s1)
@@ -112,7 +112,7 @@ class LanceTest extends AnyFunSuite:
         Position(4, 2) -> Lance(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(4, 2), Position(4, 8)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 8), Position(4, 2)), IllegalMove, s1)
@@ -125,7 +125,7 @@ class LanceTest extends AnyFunSuite:
         Position(6, 4) -> Lance(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(6, 4), Position(6, 1), false), ExpectingPromotion, s0)
     testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(6, 1), true), PromotedLance(BLACK_PLAYER), s0)
@@ -141,7 +141,7 @@ class LanceTest extends AnyFunSuite:
         Position(6, 4) -> Lance(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(6, 2), false), Lance(BLACK_PLAYER), s0)
     testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(6, 2), true), PromotedLance(BLACK_PLAYER), s0)
@@ -157,7 +157,7 @@ class LanceTest extends AnyFunSuite:
         Position(2, 6) -> Lance(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(2, 6), Position(2, 4), true), IncorrectPromotionScenario, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(1, 4), Position(1, 6), true), IncorrectPromotionScenario, s1)
@@ -170,7 +170,7 @@ class LanceTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(LANCE)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9
@@ -203,7 +203,7 @@ class LanceTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(LANCE)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9

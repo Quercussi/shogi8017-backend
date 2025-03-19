@@ -28,7 +28,7 @@ class KingTest extends AnyFunSuite:
         Position(5, 8) -> King(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = generateUStarPositions(Position(5, 8))
     testSeqBlack.foreach(pos => testAction(BLACK_PLAYER, MoveAction(Position(5, 8), pos), King(BLACK_PLAYER), s0))
@@ -39,7 +39,7 @@ class KingTest extends AnyFunSuite:
 
   test("A King should not move like something else") {
     val s0 = Board.emptyBoard
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val blackReachablePositions = generateUStarPositions(Position(5, 9))
     val testSeqBlack = getAllPosition.filterNot(p => blackReachablePositions.contains(p) || p == Position(5, 9))
@@ -64,7 +64,7 @@ class KingTest extends AnyFunSuite:
         Position(5, 4) -> Knight(BLACK_PLAYER),
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     //  a b c d e f g h i
     //9 R . . . . . . . .
@@ -90,7 +90,7 @@ class KingTest extends AnyFunSuite:
         Position(5, 8) -> King(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     generateUStarPositions(Position(5, 8)).foreach(pos =>
       val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(WHITE_PLAYER)))
@@ -116,7 +116,7 @@ class KingTest extends AnyFunSuite:
         Position(5, 8) -> King(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     generateUStarPositions(Position(5, 8)).foreach(pos =>
       val s0_temp = s0.copy(piecesMap = s0.piecesMap + (pos -> Knight(BLACK_PLAYER)))
@@ -138,7 +138,7 @@ class KingTest extends AnyFunSuite:
         Position(6, 4) -> Knight(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(5, 8), Position(6, 1)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(5, 2), Position(6, 4)), IllegalMove, s1)
@@ -151,7 +151,7 @@ class KingTest extends AnyFunSuite:
         Position(5, 4) -> King(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     (4 to 6).foreach(col => testActionError(BLACK_PLAYER, MoveAction(Position(5, 4), Position(col, 3), true), CannotPromote, s0))
     (4 to 6).foreach(col => testActionError(WHITE_PLAYER, MoveAction(Position(5, 6), Position(col, 7), true), CannotPromote, s1))
@@ -189,7 +189,7 @@ class KingTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(KING)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9

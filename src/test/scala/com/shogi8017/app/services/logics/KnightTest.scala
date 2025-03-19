@@ -29,7 +29,7 @@ class KnightTest extends AnyFunSuite:
     val newBoard1 = Board(newPieces)
     testActionError(BLACK_PLAYER, MoveAction(Position(6, 6), Position(7, 8)), IllegalMove, newBoard1)
 
-    val newBoard2 = Board(piecesMap = newPieces, auxiliaryState = newBoard1.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard2 = Board(piecesMap = newPieces, currentPlayerTurn = WHITE_PLAYER)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(3, 2)), IllegalMove, newBoard2)
   }
 
@@ -42,7 +42,7 @@ class KnightTest extends AnyFunSuite:
     val newBoard1 = Board(newPieces)
     testActionError(BLACK_PLAYER, MoveAction(Position(6, 6), Position(2, 4)), IllegalMove, newBoard1)
 
-    val newBoard2 = Board(piecesMap = newPieces, auxiliaryState = newBoard1.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard2 = Board(piecesMap = newPieces, currentPlayerTurn = WHITE_PLAYER)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(5, 7)), IllegalMove, newBoard2)
   }
 
@@ -59,7 +59,7 @@ class KnightTest extends AnyFunSuite:
       + (Position(3, 4) -> Pawn(Player.WHITE_PLAYER))
       + (Position(3, 5) -> Pawn(Player.WHITE_PLAYER))
 
-    val newBoard = Board(newPieces).copy(auxiliaryState = defaultBoard.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard = Board(newPieces).copy(currentPlayerTurn = WHITE_PLAYER)
     testAction(WHITE_PLAYER, MoveAction(Position(4, 4), Position(5, 6)), Knight(WHITE_PLAYER), newBoard)
   }
 
@@ -73,7 +73,7 @@ class KnightTest extends AnyFunSuite:
         Position(4, 7)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val r0 = testAction(BLACK_PLAYER, MoveAction(Position(3, 6), Position(4, 4)), Knight(Player.BLACK_PLAYER), s0)
     assert(r0.piecesMap.size == 40)
@@ -97,7 +97,7 @@ class KnightTest extends AnyFunSuite:
     val newBoard1 = Board(newPieces)
     testActionError(BLACK_PLAYER, MoveAction(Position(5, 5), Position(6, 3)), IllegalMove, newBoard1)
 
-    val newBoard2 = Board(piecesMap = newPieces, auxiliaryState = newBoard1.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard2 = Board(piecesMap = newPieces, currentPlayerTurn = WHITE_PLAYER)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(3, 6)), IllegalMove, newBoard2)
   }
 
@@ -108,7 +108,7 @@ class KnightTest extends AnyFunSuite:
         Position(4, 4) -> Knight(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(4, 4), Position(3, 6)), IllegalMove, s0)
 
@@ -135,7 +135,7 @@ class KnightTest extends AnyFunSuite:
       + (Position(1, 4) -> Knight(WHITE_PLAYER))
       + (Position(2, 6) -> Knight(BLACK_PLAYER))
     val board0 = Board(newPieces)
-    val board1 = board0.copy(auxiliaryState = board0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val board1 = board0.copy(auxiliaryState = board0.auxiliaryState, currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(2, 6), Position(3, 4), true), IncorrectPromotionScenario, board0)
     testActionError(WHITE_PLAYER, MoveAction(Position(1, 4), Position(2, 6), true), IncorrectPromotionScenario, board1)
@@ -148,7 +148,7 @@ class KnightTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(KNIGHT)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9
@@ -181,7 +181,7 @@ class KnightTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(KNIGHT)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9

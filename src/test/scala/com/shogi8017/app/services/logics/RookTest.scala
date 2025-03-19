@@ -17,7 +17,7 @@ class RookTest extends AnyFunSuite:
         Position(3, 3) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = (1 to 9).filter(_ != 3)
     testSeqBlack.foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(3, 3), Position(3, col)), Rook(BLACK_PLAYER), s0))
@@ -35,7 +35,7 @@ class RookTest extends AnyFunSuite:
         Position(4, 6) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = (1 to 9).map(i => Position(i, 10 - i)).filterNot(_ == Position(4, 6))
     testSeqBlack.foreach(pos => testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), pos), IllegalMove, s0))
@@ -52,7 +52,7 @@ class RookTest extends AnyFunSuite:
         Position(4, 6) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9
@@ -73,7 +73,7 @@ class RookTest extends AnyFunSuite:
         Position(4, 6) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(8, 6)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(3, 6)), IllegalMove, s1)
@@ -86,7 +86,7 @@ class RookTest extends AnyFunSuite:
         Position(4, 6) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val r0 = testAction(BLACK_PLAYER, MoveAction(Position(4, 6), Position(6, 6)), Rook(BLACK_PLAYER), s0)
     assert(r0.piecesMap.size == 3)
@@ -108,7 +108,7 @@ class RookTest extends AnyFunSuite:
         Position(2, 6) -> Knight(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(4, 6), Position(2, 6)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(6, 7)), IllegalMove, s1)
@@ -121,7 +121,7 @@ class RookTest extends AnyFunSuite:
         Position(2, 2) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(2, 2), Position(6, 6)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(6, 6), Position(2, 2)), IllegalMove, s1)
@@ -136,7 +136,7 @@ class RookTest extends AnyFunSuite:
         Position(4, 2) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     (1 to 3).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(3, 9), Position(3, row), false), Rook(BLACK_PLAYER), s0))
     (1 to 3).foreach(row => testAction(BLACK_PLAYER, MoveAction(Position(3, 9), Position(3, row), true),  PromotedRook(BLACK_PLAYER), s0))
@@ -158,7 +158,7 @@ class RookTest extends AnyFunSuite:
         Position(9, 4) -> Rook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     (1 to 8).foreach(col => testActionError(BLACK_PLAYER, MoveAction(Position(9, 4), Position(col, 4), true), IncorrectPromotionScenario, s0))
     (5 to 9).foreach(row => testActionError(BLACK_PLAYER, MoveAction(Position(9, 4), Position(9, row), true), IncorrectPromotionScenario, s0))
@@ -198,7 +198,7 @@ class RookTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(ROOK)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
   
     val allPositions = for {
       row <- 1 to 9

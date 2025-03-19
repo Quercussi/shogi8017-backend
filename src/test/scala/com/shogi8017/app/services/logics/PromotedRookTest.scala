@@ -34,7 +34,7 @@ class PromotedRookTest extends AnyFunSuite:
         blackRookPos -> PromotedRook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = generateReachablePositions(blackRookPos)
     testSeqBlack.foreach(pos => testAction(BLACK_PLAYER, MoveAction(blackRookPos, pos), PromotedRook(BLACK_PLAYER), s0))
@@ -50,7 +50,7 @@ class PromotedRookTest extends AnyFunSuite:
         Position(3, 5) -> PromotedRook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val blackReachablePositions = generateReachablePositions(Position(3, 5))
     val testSeqBlack = getAllPosition.filterNot(blackReachablePositions.contains)
@@ -68,7 +68,7 @@ class PromotedRookTest extends AnyFunSuite:
         Position(7, 4) -> PromotedRook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(7, 4), Position(2, 4)), IllegalMove, s0)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(8, 4)), IllegalMove, s1)
@@ -81,7 +81,7 @@ class PromotedRookTest extends AnyFunSuite:
         Position(6, 7) -> PromotedRook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = generateReachablePositions(Position(6, 7))
     testSeqBlack.foreach(pos => {
@@ -109,7 +109,7 @@ class PromotedRookTest extends AnyFunSuite:
         Position(3, 5) -> PromotedRook(BLACK_PLAYER),
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = generateReachablePositions(Position(3, 5))
     testSeqBlack.foreach(pos => {
@@ -131,7 +131,7 @@ class PromotedRookTest extends AnyFunSuite:
         Position(3, 5) -> PromotedRook(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val blackReachablePositions = generateReachablePositions(Position(3, 5))
     val testSeqBlack = getAllPosition.filterNot(blackReachablePositions.contains).filterNot(p => p == Position(3, 5) || p == Position(5, 1) || p == Position(5, 9))
@@ -157,7 +157,7 @@ class PromotedRookTest extends AnyFunSuite:
         Position(7, 3) -> PromotedRook(BLACK_PLAYER),
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     generateReachablePositions(Position(8, 5)).filter(_.y <= 3).foreach(pos =>
       testActionError(BLACK_PLAYER, MoveAction(Position(8, 5), pos, true), CannotPromote, s0)
@@ -183,7 +183,7 @@ class PromotedRookTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(P_ROOK)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9

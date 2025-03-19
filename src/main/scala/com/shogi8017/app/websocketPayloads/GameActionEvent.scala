@@ -3,7 +3,7 @@ package com.shogi8017.app.websocketPayloads
 import cats.effect.IO
 import cats.syntax.functor.*
 import com.shogi8017.app.routes.{PieceHandCount, PlayerList, PositionPiecePair}
-import com.shogi8017.app.services.logics.{GameEventWinnerPair, StateTransitionList}
+import com.shogi8017.app.services.logics.{GameEventWinnerPair, Player, StateTransitionList}
 import fs2.concurrent.Topic
 import io.circe.generic.semiauto.deriveEncoder
 import io.circe.{Encoder, Json}
@@ -20,7 +20,7 @@ case class InvalidGameActionEvent(errorMessage: String) extends GameActionEvent
 
 case class ExecutionActionEvent(stateTransitionList: StateTransitionList, gameEvent: GameEventWinnerPair) extends GameActionEvent
 
-case class BoardConfigurationEvent(playerList: PlayerList, board: List[PositionPiecePair], handPieceCounts: List[PieceHandCount]) extends GameActionEvent
+case class BoardConfigurationEvent(playerList: PlayerList, board: List[PositionPiecePair], handPieceCounts: List[PieceHandCount], currentPlayerTurn: Player) extends GameActionEvent
 
 case object KeepAliveGameActionAPI extends GameActionEvent
 

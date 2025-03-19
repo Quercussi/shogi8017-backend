@@ -26,7 +26,7 @@ class SilverTest extends AnyFunSuite:
         Position(8, 8) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = generateReachablePositions(BLACK_PLAYER)(Position(8, 8))
     testSeqBlack.foreach(pos => testAction(BLACK_PLAYER, MoveAction(Position(8, 8), pos), Silver(BLACK_PLAYER), s0))
@@ -42,7 +42,7 @@ class SilverTest extends AnyFunSuite:
         Position(7, 7) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val blackReachablePositions = generateReachablePositions(BLACK_PLAYER)(Position(7, 7))
     val testSeqBlack = getAllPosition.filterNot(blackReachablePositions.contains).filterNot(_ == Position(7, 7))
@@ -60,7 +60,7 @@ class SilverTest extends AnyFunSuite:
         Position(8, 8) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = generateReachablePositions(BLACK_PLAYER)(Position(8, 8))
     testSeqBlack.foreach(pos => {
@@ -88,7 +88,7 @@ class SilverTest extends AnyFunSuite:
         Position(8, 8) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val testSeqBlack = generateReachablePositions(BLACK_PLAYER)(Position(8, 8))
     testSeqBlack.foreach(pos => {
@@ -110,7 +110,7 @@ class SilverTest extends AnyFunSuite:
         Position(7, 7) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val blackReachablePositions = generateReachablePositions(BLACK_PLAYER)(Position(7, 7))
     val testSeqBlack = getAllPosition.filterNot(blackReachablePositions.contains).filterNot(p => p == Position(7, 7) || p == Position(5, 1) || p == Position(5, 9))
@@ -136,7 +136,7 @@ class SilverTest extends AnyFunSuite:
         Position(8, 3) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     (5 to 7).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(col, 3), false), Silver(BLACK_PLAYER), s0))
     (5 to 7).foreach(col => testAction(BLACK_PLAYER, MoveAction(Position(6, 4), Position(col, 3), true),  PromotedSilver(BLACK_PLAYER), s0))
@@ -158,7 +158,7 @@ class SilverTest extends AnyFunSuite:
         Position(8, 6) -> Silver(BLACK_PLAYER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     generateReachablePositions(BLACK_PLAYER)(Position(8, 6)).foreach(pos =>
       testActionError(BLACK_PLAYER, MoveAction(Position(8, 6), pos, true), IncorrectPromotionScenario, s0)
@@ -201,7 +201,7 @@ class SilverTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(SILVER)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9

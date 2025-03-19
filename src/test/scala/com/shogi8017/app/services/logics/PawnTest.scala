@@ -24,7 +24,7 @@ class PawnTest extends AnyFunSuite:
     val newBoard1 = Board(newPieces)
     testActionError(BLACK_PLAYER, MoveAction(Position(6, 6), Position(4, 7)), IllegalMove, newBoard1)
 
-    val newBoard2 =Board(piecesMap = newPieces, auxiliaryState = newBoard1.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard2 =Board(piecesMap = newPieces, currentPlayerTurn = WHITE_PLAYER)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(4, 3)), IllegalMove, newBoard2)
   }
 
@@ -37,7 +37,7 @@ class PawnTest extends AnyFunSuite:
     val newBoard1 = Board(newPieces)
     testActionError(BLACK_PLAYER, MoveAction(Position(6, 6), Position(2, 4)), IllegalMove, newBoard1)
 
-    val newBoard2 = Board(piecesMap = newPieces, auxiliaryState = newBoard1.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard2 = Board(piecesMap = newPieces, currentPlayerTurn = WHITE_PLAYER)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(5, 6)), IllegalMove, newBoard2)
   }
 
@@ -49,7 +49,7 @@ class PawnTest extends AnyFunSuite:
       - Position(4, 1)
       + (Position(4, 5) -> Gold(Player.WHITE_PLAYER))
 
-    val newBoard = Board(piecesMap = newPieces, auxiliaryState = defaultBoard.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard = Board(piecesMap = newPieces, currentPlayerTurn = WHITE_PLAYER)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(4, 5)), IllegalMove, newBoard)
   }
 
@@ -61,7 +61,7 @@ class PawnTest extends AnyFunSuite:
       - Position(4, 7)
       + (Position(4, 5) -> Pawn(Player.BLACK_PLAYER))
 
-    val newBoard = Board(piecesMap = newPieces, auxiliaryState = Board.defaultInitialPosition.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard = Board(piecesMap = newPieces, currentPlayerTurn = WHITE_PLAYER)
     testAction(WHITE_PLAYER, MoveAction(Position(4, 4), Position(4, 5)), Pawn(Player.WHITE_PLAYER), newBoard)
   }
 
@@ -76,7 +76,7 @@ class PawnTest extends AnyFunSuite:
     val newBoard1 = Board(newPieces)
     testActionError(BLACK_PLAYER, MoveAction(Position(5, 5), Position(5, 4)), IllegalMove, newBoard1)
 
-    val newBoard2 = Board(piecesMap = newPieces, auxiliaryState = newBoard1.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard2 = Board(piecesMap = newPieces, currentPlayerTurn = WHITE_PLAYER)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 4), Position(4, 5)), IllegalMove, newBoard2)
   }
 
@@ -91,7 +91,7 @@ class PawnTest extends AnyFunSuite:
     val newBoard1 = Board(newPieces)
     testActionError(BLACK_PLAYER, MoveAction(Position(3, 5), Position(4, 6)), IllegalMove, newBoard1)
 
-    val newBoard2 = Board(piecesMap = newPieces, auxiliaryState = newBoard1.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val newBoard2 = Board(piecesMap = newPieces, currentPlayerTurn = WHITE_PLAYER)
     testActionError(WHITE_PLAYER, MoveAction(Position(4, 6), Position(3, 5)), IllegalMove, newBoard2)
   }
 
@@ -115,7 +115,7 @@ class PawnTest extends AnyFunSuite:
       + (Position(1, 5) -> Pawn(WHITE_PLAYER))
       + (Position(2, 5) -> Pawn(BLACK_PLAYER))
     val board0 = Board(newPieces)
-    val board1 = board0.copy(auxiliaryState = board0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val board1 = board0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(BLACK_PLAYER, MoveAction(Position(2, 5), Position(2, 4), true), IncorrectPromotionScenario, board0)
     testActionError(WHITE_PLAYER, MoveAction(Position(1, 5), Position(1, 6), true), IncorrectPromotionScenario, board1)
@@ -128,7 +128,7 @@ class PawnTest extends AnyFunSuite:
         WHITE_PLAYER -> Multiset(LANCE)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9
@@ -161,7 +161,7 @@ class PawnTest extends AnyFunSuite:
         WHITE_PLAYER -> Multiset(PAWN)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     val allPositions = for {
       row <- 1 to 9
@@ -201,7 +201,7 @@ class PawnTest extends AnyFunSuite:
         WHITE_PLAYER -> Multiset(PAWN)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     //  a b c d e f g h i
     //9 . . . . . R . . .
@@ -229,7 +229,7 @@ class PawnTest extends AnyFunSuite:
         BLACK_PLAYER -> Multiset(PAWN)
       )
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     //  a b c d e f g h i
     //9 . . . . k . . . .

@@ -1,13 +1,13 @@
 package com.shogi8017.app.services.logics
 
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import com.shogi8017.app.exceptions.{IllegalMove, NotOwnerOfPiece, OutOfTurn}
 import com.shogi8017.app.models.enumerators.GameWinner.{BLACK_WINNER, DRAW, WHITE_WINNER}
 import com.shogi8017.app.services.logics.Board.{executeOnBoardAction, executionAction}
 import com.shogi8017.app.services.logics.GameEvent.{CHECK, CHECKMATE}
-import com.shogi8017.app.services.logics.LogicTestUtils.{testAction, testActionError}
+import com.shogi8017.app.services.logics.LogicTestUtils.{fromMovesList, testAction, testActionError}
 import com.shogi8017.app.services.logics.Player.{BLACK_PLAYER, WHITE_PLAYER}
-import com.shogi8017.app.services.logics.actions.{DropAction, MoveAction}
+import com.shogi8017.app.services.logics.actions.{DropAction, ExecutionAction, MoveAction}
 import com.shogi8017.app.services.logics.pieces.*
 import com.shogi8017.app.services.logics.pieces.PieceType.*
 import com.shogi8017.app.services.logics.pieces.PromotablePieceType.*
@@ -50,7 +50,7 @@ class BoardTest extends AnyFunSuite {
         Position(1, 8) -> Rook(BLACK_PLAYER),
       ),
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(WHITE_PLAYER, MoveAction(Position(1, 8), Position(2, 8)), NotOwnerOfPiece, s1)
   }
@@ -62,9 +62,9 @@ class BoardTest extends AnyFunSuite {
         Position(1, 8) -> Rook(BLACK_PLAYER),
       ),
       hands = Map(WHITE_PLAYER -> Multiset(PAWN), BLACK_PLAYER -> Multiset(PAWN)),
-      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
+      currentPlayerTurn = BLACK_PLAYER
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(WHITE_PLAYER, MoveAction(Position(1, 3), Position(1, 7)), OutOfTurn, s0)
     testActionError(WHITE_PLAYER, DropAction(Position(1, 7), PAWN), OutOfTurn, s0)
@@ -87,7 +87,7 @@ class BoardTest extends AnyFunSuite {
         Position(2,8) -> Rook(BLACK_PLAYER),
         Position(8,8) -> Rook(BLACK_PLAYER)
       ),
-      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER)))
+      currentPlayerTurn = WHITE_PLAYER
     )
 
     //  a b c d e f g h i
@@ -123,7 +123,7 @@ class BoardTest extends AnyFunSuite {
         Position(8, 8) -> Rook(BLACK_PLAYER)
       ),
       hands = Map(WHITE_PLAYER -> Multiset(KNIGHT), BLACK_PLAYER -> Multiset.empty),
-      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER)))
+      currentPlayerTurn = WHITE_PLAYER
     )
 
     //  a b c d e f g h i
@@ -159,7 +159,7 @@ class BoardTest extends AnyFunSuite {
         Position(7,2) -> Rook(BLACK_PLAYER),
         Position(8,8) -> Rook(BLACK_PLAYER)
       ),
-      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
+      currentPlayerTurn = BLACK_PLAYER
     )
 
     //  a b c d e f g h i
@@ -191,7 +191,7 @@ class BoardTest extends AnyFunSuite {
         Position(5,8) -> Rook(BLACK_PLAYER),
       ),
     )
-    val s1 = s0.copy(auxiliaryState = s0.auxiliaryState.copy(lastAction = Some(Actor(BLACK_PLAYER))))
+    val s1 = s0.copy(currentPlayerTurn = WHITE_PLAYER)
 
     testActionError(WHITE_PLAYER, MoveAction(Position(5, 3), Position(4, 3)), IllegalMove, s1)
   }
@@ -205,7 +205,7 @@ class BoardTest extends AnyFunSuite {
         Position(7,2) -> Rook(BLACK_PLAYER),
         Position(8,8) -> Rook(BLACK_PLAYER),
       ),
-      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
+      currentPlayerTurn = BLACK_PLAYER
     )
 
     //  a b c d e f g h i
@@ -239,7 +239,7 @@ class BoardTest extends AnyFunSuite {
         Position(7,2) -> Rook(BLACK_PLAYER),
         Position(8,6) -> Rook(BLACK_PLAYER),
       ),
-      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
+      currentPlayerTurn = BLACK_PLAYER
     )
 
     //  a b c d e f g h i
@@ -273,7 +273,7 @@ class BoardTest extends AnyFunSuite {
         Position(8,6) -> Rook(BLACK_PLAYER),
       ),
       hands = Map(WHITE_PLAYER -> Multiset(KNIGHT), BLACK_PLAYER -> Multiset.empty),
-      auxiliaryState = Board.emptyBoard.auxiliaryState.copy(lastAction = Some(Actor(WHITE_PLAYER)))
+      currentPlayerTurn = BLACK_PLAYER
     )
 
     //  a b c d e f g h i
@@ -298,89 +298,6 @@ class BoardTest extends AnyFunSuite {
     }
   }
 
-//
-//  test("Actual chess game test 1") {
-//    // Anderssen vs. Kieseritzky (1851)
-//    val moves: List[(Player, MoveAction)] = List(
-//      (WHITE_PLAYER, MoveAction(Position(5, 2), Position(5, 4), None)), // 1. e4
-//      (BLACK_PLAYER, MoveAction(Position(5, 7), Position(5, 5), None)), // 1... e5
-//      (WHITE_PLAYER, MoveAction(Position(6, 2), Position(6, 4), None)), // 2. f4
-//      (BLACK_PLAYER, MoveAction(Position(5, 5), Position(6, 4), None)), // 2... exf4
-//      (WHITE_PLAYER, MoveAction(Position(6, 1), Position(3, 4), None)), // 3. Bc4
-//      (BLACK_PLAYER, MoveAction(Position(4, 8), Position(8, 4), None)), // 3... Qh4+
-//      (WHITE_PLAYER, MoveAction(Position(5, 1), Position(6, 1), None)), // 4. Kf1
-//      (BLACK_PLAYER, MoveAction(Position(2, 7), Position(2, 5), None)), // 4... b5
-//      (WHITE_PLAYER, MoveAction(Position(3, 4), Position(2, 5), None)), // 5. Bxb5
-//      (BLACK_PLAYER, MoveAction(Position(7, 8), Position(6, 6), None)), // 5... Nf6
-//      (WHITE_PLAYER, MoveAction(Position(7, 1), Position(6, 3), None)), // 6. Nf3
-//      (BLACK_PLAYER, MoveAction(Position(8, 4), Position(8, 6), None)), // 6... Qh6
-//      (WHITE_PLAYER, MoveAction(Position(4, 2), Position(4, 3), None)), // 7. d3
-//      (BLACK_PLAYER, MoveAction(Position(6, 6), Position(8, 5), None)), // 7... Nh5
-//      (WHITE_PLAYER, MoveAction(Position(6, 3), Position(8, 4), None)), // 8. Nh4
-//      (BLACK_PLAYER, MoveAction(Position(8, 6), Position(7, 5), None)), // 8... Qg5
-//      (WHITE_PLAYER, MoveAction(Position(8, 4), Position(6, 5), None)), // 9. Nf5
-//      (BLACK_PLAYER, MoveAction(Position(3, 7), Position(3, 6), None)), // 9... c6
-//      (WHITE_PLAYER, MoveAction(Position(7, 2), Position(7, 4), None)), // 10. g4
-//      (BLACK_PLAYER, MoveAction(Position(8, 5), Position(6, 6), None)), // 10... Nf6
-//      (WHITE_PLAYER, MoveAction(Position(8, 1), Position(7, 1), None)), // 11. Rg1
-//      (BLACK_PLAYER, MoveAction(Position(3, 6), Position(2, 5), None)), // 11... cxb5
-//      (WHITE_PLAYER, MoveAction(Position(8, 2), Position(8, 4), None)), // 12. h4
-//      (BLACK_PLAYER, MoveAction(Position(7, 5), Position(7, 6), None)), // 12... Qg6
-//      (WHITE_PLAYER, MoveAction(Position(8, 4), Position(8, 5), None)), // 13. h5
-//      (BLACK_PLAYER, MoveAction(Position(7, 6), Position(7, 5), None)), // 13... Qg5
-//      (WHITE_PLAYER, MoveAction(Position(4, 1), Position(6, 3), None)), // 14. Qf3
-//      (BLACK_PLAYER, MoveAction(Position(6, 6), Position(7, 8), None)), // 14... Ng8
-//      (WHITE_PLAYER, MoveAction(Position(3, 1), Position(6, 4), None)), // 15. Bxf4
-//      (BLACK_PLAYER, MoveAction(Position(7, 5), Position(6, 6), None)), // 15... Qf6
-//      (WHITE_PLAYER, MoveAction(Position(2, 1), Position(3, 3), None)), // 16. Nc3
-//      (BLACK_PLAYER, MoveAction(Position(6, 8), Position(3, 5), None)), // 16... Bc5
-//      (WHITE_PLAYER, MoveAction(Position(3, 3), Position(4, 5), None)), // 17. Nd5
-//      (BLACK_PLAYER, MoveAction(Position(6, 6), Position(2, 2), None)), // 17... Qxb2
-//      (WHITE_PLAYER, MoveAction(Position(6, 4), Position(4, 6), None)), // 18. Bd6
-//      (BLACK_PLAYER, MoveAction(Position(3, 5), Position(7, 1), None)), // 18... Bxg1
-//      (WHITE_PLAYER, MoveAction(Position(5, 4), Position(5, 5), None)), // 19. e5
-//      (BLACK_PLAYER, MoveAction(Position(2, 2), Position(1, 1), None)), // 19... Qxa1+
-//      (WHITE_PLAYER, MoveAction(Position(6, 1), Position(5, 2), None)), // 20. Ke2
-//      (BLACK_PLAYER, MoveAction(Position(2, 8), Position(1, 6), None)), // 20... Na6
-//      (WHITE_PLAYER, MoveAction(Position(6, 5), Position(7, 7), None)), // 21. Nxg7+
-//      (BLACK_PLAYER, MoveAction(Position(5, 8), Position(4, 8), None)), // 21... Kd8
-//      (WHITE_PLAYER, MoveAction(Position(6, 3), Position(6, 6), None)), // 22. Qf6+
-//      (BLACK_PLAYER, MoveAction(Position(7, 8), Position(6, 6), None)), // 22... Nxf6
-//      (WHITE_PLAYER, MoveAction(Position(4, 6), Position(5, 7), None)), // 23. Be7#
-//    )
-//
-//    val expectedFinalPosition: Map[Position, Piece] = Map(
-//      Position(1,1) -> Queen(BLACK_PLAYER, true),
-//      Position(1,2) -> Pawn(WHITE_PLAYER, false),
-//      Position(1,6) -> Knight(BLACK_PLAYER, true),
-//      Position(1,7) -> Pawn(BLACK_PLAYER, false),
-//      Position(1,8) -> Rook(BLACK_PLAYER, false),
-//      Position(2,5) -> Pawn(BLACK_PLAYER, true),
-//      Position(3,2) -> Pawn(WHITE_PLAYER, false),
-//      Position(3,8) -> Bishop(BLACK_PLAYER, false),
-//      Position(4,3) -> Pawn(WHITE_PLAYER, true),
-//      Position(4,5) -> Knight(WHITE_PLAYER, true),
-//      Position(4,7) -> Pawn(BLACK_PLAYER, false),
-//      Position(4,8) -> King(BLACK_PLAYER, true),
-//      Position(5,2) -> King(WHITE_PLAYER, true),
-//      Position(5,5) -> Pawn(WHITE_PLAYER, true),
-//      Position(5,7) -> Bishop(WHITE_PLAYER, true),
-//      Position(6,6) -> Knight(BLACK_PLAYER, true),
-//      Position(6,7) -> Pawn(BLACK_PLAYER, false),
-//      Position(7,1) -> Bishop(BLACK_PLAYER, true),
-//      Position(7,4) -> Pawn(WHITE_PLAYER, true),
-//      Position(7,7) -> Knight(WHITE_PLAYER, true),
-//      Position(8,5) -> Pawn(WHITE_PLAYER, true),
-//      Position(8,7) -> Pawn(BLACK_PLAYER, false),
-//      Position(8,8) -> Rook(BLACK_PLAYER, false),
-//    )
-//
-//    val validatedBoard = fromMovesList(moves)
-//    validatedBoard match
-//      case Valid(board) => assert(board.piecesMap == expectedFinalPosition)
-//      case Invalid(e) => fail(s"All moves should be valid: $e")
-//  }
-
   test("A board can check a draw by impasse") {
     val handMap = Map(
       KNIGHT -> 2,
@@ -398,7 +315,8 @@ class BoardTest extends AnyFunSuite {
         Position(5,4) -> King(BLACK_PLAYER),
       ),
       hands = Map(WHITE_PLAYER -> Multiset(handMap), BLACK_PLAYER -> Multiset(handMap)),
-      auxiliaryState = BoardAuxiliaryState(lastAction = Some(Actor(WHITE_PLAYER)), gameWinner = None)
+      auxiliaryState = BoardAuxiliaryState(gameWinner = None),
+      currentPlayerTurn = BLACK_PLAYER
     )
 
     executeOnBoardAction(s0, BLACK_PLAYER, MoveAction(Position(5, 4), Position(5, 3))) match {
@@ -439,7 +357,8 @@ class BoardTest extends AnyFunSuite {
         Position(6,4) -> Bishop(BLACK_PLAYER),
       ),
       hands = Map(WHITE_PLAYER -> Multiset(loserHandMap), BLACK_PLAYER -> Multiset(winnerHandMap)),
-      auxiliaryState = BoardAuxiliaryState(lastAction = Some(Actor(WHITE_PLAYER)), gameWinner = None)
+      auxiliaryState = BoardAuxiliaryState(gameWinner = None),
+      currentPlayerTurn = BLACK_PLAYER
     )
 
     executeOnBoardAction(s0, BLACK_PLAYER, MoveAction(Position(5, 4), Position(5, 3))) match {
@@ -482,7 +401,8 @@ class BoardTest extends AnyFunSuite {
         Position(2,4) -> Bishop(WHITE_PLAYER),
       ),
       hands = Map(WHITE_PLAYER -> Multiset(winnerHandMap), BLACK_PLAYER -> Multiset(loserHandMap)),
-      auxiliaryState = BoardAuxiliaryState(lastAction = Some(Actor(BLACK_PLAYER)), gameWinner = None)
+      auxiliaryState = BoardAuxiliaryState(gameWinner = None),
+      currentPlayerTurn = WHITE_PLAYER
     )
 
     executeOnBoardAction(s0, WHITE_PLAYER, MoveAction(Position(5, 6), Position(5, 7))) match {
@@ -495,4 +415,45 @@ class BoardTest extends AnyFunSuite {
       case _ => fail("Move should be valid")
     }
   }
+
+
+    test("Actual chess game test 1") {
+      // Shortest game possible
+      val moves: List[(Player, MoveAction)] = List(
+        (BLACK_PLAYER, MoveAction(Position(7, 7), Position(7, 6), false)),
+        (WHITE_PLAYER, MoveAction(Position(6, 1), Position(7, 2), false)),
+        (BLACK_PLAYER, MoveAction(Position(8, 8), Position(3, 3), true)),
+      )
+
+//      val expectedFinalPosition: Map[Position, Piece] = Map(
+//        Position(1,1) -> Queen(BLACK_PLAYER, true),
+//        Position(1,2) -> Pawn(WHITE_PLAYER, false),
+//        Position(1,6) -> Knight(BLACK_PLAYER, true),
+//        Position(1,7) -> Pawn(BLACK_PLAYER, false),
+//        Position(1,8) -> Rook(BLACK_PLAYER, false),
+//        Position(2,5) -> Pawn(BLACK_PLAYER, true),
+//        Position(3,2) -> Pawn(WHITE_PLAYER, false),
+//        Position(3,8) -> Bishop(BLACK_PLAYER, false),
+//        Position(4,3) -> Pawn(WHITE_PLAYER, true),
+//        Position(4,5) -> Knight(WHITE_PLAYER, true),
+//        Position(4,7) -> Pawn(BLACK_PLAYER, false),
+//        Position(4,8) -> King(BLACK_PLAYER, true),
+//        Position(5,2) -> King(WHITE_PLAYER, true),
+//        Position(5,5) -> Pawn(WHITE_PLAYER, true),
+//        Position(5,7) -> Bishop(WHITE_PLAYER, true),
+//        Position(6,6) -> Knight(BLACK_PLAYER, true),
+//        Position(6,7) -> Pawn(BLACK_PLAYER, false),
+//        Position(7,1) -> Bishop(BLACK_PLAYER, true),
+//        Position(7,4) -> Pawn(WHITE_PLAYER, true),
+//        Position(7,7) -> Knight(WHITE_PLAYER, true),
+//        Position(8,5) -> Pawn(WHITE_PLAYER, true),
+//        Position(8,7) -> Pawn(BLACK_PLAYER, false),
+//        Position(8,8) -> Rook(BLACK_PLAYER, false),
+//      )
+
+      val validatedBoard = fromMovesList(moves.map((player, action) => ExecutionAction(player, action)))
+      validatedBoard match
+        case Valid(board) => assert(true)
+        case Invalid(e) => fail(s"All moves should be valid: $e")
+    }
 }

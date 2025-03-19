@@ -24,7 +24,8 @@ case class Board(
     Player.WHITE_PLAYER -> Multiset.empty,
     Player.BLACK_PLAYER -> Multiset.empty
   ),
-  auxiliaryState: BoardAuxiliaryState = BoardAuxiliaryState(None, None)
+  auxiliaryState: BoardAuxiliaryState = BoardAuxiliaryState(None),
+  currentPlayerTurn: Player = BLACK_PLAYER
 )
 
 object Board {
@@ -89,7 +90,7 @@ object Board {
 
       val errors: List[ActionValidationException] = {
         val commonErrors = List(
-          Option.when(isOutOfTurn(board.auxiliaryState.lastAction, player))(OutOfTurn)
+          Option.when(isOutOfTurn(board.currentPlayerTurn, player))(OutOfTurn)
         )
 
         val specificErrors = onBoardAction match {
@@ -186,10 +187,8 @@ object Board {
     Valid((newBoard, List.empty, algebraicNotation, gameEvent))
   }
 
-  private def isOutOfTurn(lastAction: Option[Actor], currentPlayer: Player): Boolean =
-    lastAction match
-      case None => currentPlayer == WHITE_PLAYER
-      case Some(lastAction) => lastAction.player == currentPlayer
+  private def isOutOfTurn(currentPlayerTurn: Player, currentPlayer: Player): Boolean =
+    currentPlayerTurn != currentPlayer
 
   private def isStalemate(board: Board, player: Player): Boolean = {
     !isChecked(board, player) && !(
@@ -236,8 +235,7 @@ object Board {
           acc.copy(hands = acc.hands + (player -> updatedHand))
       }
     }
-    val newAuxiliaryState = board.auxiliaryState.copy(lastAction = Some(Actor(actingPlayer)))
-    updatedBoard.copy(auxiliaryState = newAuxiliaryState)
+    updatedBoard.copy(currentPlayerTurn = opponent(actingPlayer))
   }
 
   def isChecked(board: Board, player: Player): Boolean = {
@@ -252,11 +250,10 @@ object Board {
           case Some(p) if p.owner != player => board.hands.updated(player, board.hands(player) + p.pieceType)
           case _ => board.hands
         }
-        val updatedAuxiliaryState = board.auxiliaryState.copy(lastAction = Some(Actor(player)))
         val tempBoard = board.copy(
           piecesMap = board.piecesMap - position + (to -> piece),
           hands = updatedHands,
-          auxiliaryState = updatedAuxiliaryState
+          currentPlayerTurn = opponent(player)
         )
 
         !isChecked(tempBoard, player)
@@ -266,11 +263,10 @@ object Board {
     lazy val dropEscape = existsPlayerHands(board, player) {
       case piece@(droppablePiece: DroppablePiece) =>
         droppablePiece.getAllPossibleDrops(board).exists { to =>
-          val updatedAuxiliaryState = board.auxiliaryState.copy(lastAction = Some(Actor(player)))
           val tempBoard = board.copy(
             piecesMap = board.piecesMap + (to -> piece),
             hands = board.hands.updated(player, board.hands(player) - piece.pieceType),
-            auxiliaryState = updatedAuxiliaryState
+            currentPlayerTurn = opponent(player)
           )
 
           !isChecked(tempBoard, player)
@@ -336,14 +332,14 @@ object Board {
         }
     }.toList
     
-    BoardConfiguration(boardConfiguration, handPieceCounts)
+    BoardConfiguration(boardConfiguration, handPieceCounts, board.currentPlayerTurn)
   }
 
   def convertToBoardConfigurationEvent(board: Board, whitePlayer: UserModel, blackPlayer: UserModel): BoardConfigurationEvent = {
     val boardConfiguration = convertToBoardConfiguration(board)
     val playerList = PlayerList(whitePlayer, blackPlayer)
 
-    BoardConfigurationEvent(playerList, boardConfiguration.board, boardConfiguration.handPieceCounts)
+    BoardConfigurationEvent(playerList, boardConfiguration.board, boardConfiguration.handPieceCounts, board.currentPlayerTurn)
   }
 }
 
