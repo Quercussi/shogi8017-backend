@@ -10,7 +10,7 @@ ThisBuild / scalaVersion := "3.6.3"
 val http4sVersion = "0.23.30"
 val jwtHttp4sVersion = "2.0.2"
 val jwtScalaVersion = "10.0.4"
-val doobieVersion = "1.0.0-RC7"
+val doobieVersion = "1.0.0-RC8"
 val redis4catsVersion = "1.7.2"
 val pureconfigVersion = "0.17.8"
 
