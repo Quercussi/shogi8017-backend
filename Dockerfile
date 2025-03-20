@@ -24,6 +24,8 @@ FROM gcr.io/distroless/java17-debian12 AS runtime
 
 WORKDIR /app
 
+ENV TZ=Asia/Bangkok
+
 COPY --from=build /app/target/scala-3.6.3/shogi8017-backend-assembly-0.1.0-SNAPSHOT.jar /app/app.jar
 
 EXPOSE 8080
