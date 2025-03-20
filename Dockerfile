@@ -5,6 +5,8 @@ RUN apt-get update && \
     curl -sL "https://github.com/sbt/sbt/releases/download/v1.9.8/sbt-1.9.8.tgz" | tar xz -C /usr/local && \
     ln -s /usr/local/sbt/bin/sbt /usr/bin/sbt
 
+ENV TZ=Asia/Bangkok
+
 WORKDIR /app
 
 COPY build.sbt .
