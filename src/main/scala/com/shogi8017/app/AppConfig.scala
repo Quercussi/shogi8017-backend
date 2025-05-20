@@ -5,7 +5,7 @@ import cats.effect.IO
 import cats.implicits.catsSyntaxEither
 import pureconfig.{ConfigReader, ConfigSource}
 
-case class AppConfig(app: App, database: DatabaseConfig, jwt: JwtConfig, env: Env) derives ConfigReader
+case class AppConfig(app: App, database: DatabaseConfig, redis: RedisConfig, jwt: JwtConfig, env: Env) derives ConfigReader
 
 object AppConfig {
   def loadConfig(namespace: String): EitherT[IO, Throwable, AppConfig] = {
@@ -34,6 +34,22 @@ case class DatabaseConfig(
        |  Password: ${password.map(_ => "****")}
        |  Migrations Table: $migrationsTable
        |  Migrations Locations: ${migrationsLocations.mkString(", ")}
+       |""".stripMargin
+  }
+}
+
+case class RedisConfig (
+  host: String,
+  port: Int,
+  databaseName: String,
+) derives ConfigReader {
+  def connectionUrl: String = s"redis://$host:$port/$databaseName"
+  def prettyPrint: String = {
+    s"""
+       |Redis Configuration:
+       |  Host: $host
+       |  Port: $port
+       |  Database Name: $databaseName
        |""".stripMargin
   }
 }

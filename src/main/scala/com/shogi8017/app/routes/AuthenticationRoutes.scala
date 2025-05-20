@@ -39,7 +39,11 @@ case class AuthenticationRoutes(authenticationService: AuthenticationService) {
   def getWebSocketTokenRoute: AuthedRoutes[UserModel, IO] = AuthedRoutes.of[UserModel, IO] {
     case POST -> Root as user =>
       for {
-        res <- Ok(authenticationService.getUserWebsocketToken(user))
+        response <- authenticationService.getUserWebsocketToken(user).value
+        res <- response match {
+          case Right(webSocketToken) => Ok(webSocketToken.asJson)
+          case Left(error) => InternalServerError(s"Error: ${error.toString}")
+        }
       } yield res
   }
 }

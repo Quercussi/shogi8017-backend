@@ -2,7 +2,7 @@ package com.shogi8017.app
 
 import cats.effect.{IO, Resource}
 import cats.implicits.toSemigroupKOps
-import com.shogi8017.app.database.Database
+import com.shogi8017.app.database.{Database, RedisDatabase, RedisResource}
 import com.shogi8017.app.middlewares.MiddlewareCollection
 import com.shogi8017.app.repository.RepositoryCollection
 import com.shogi8017.app.routes.UnifiedRoutes.initializeWebSocketProcessingStream
@@ -31,8 +31,10 @@ object Server {
     })
 
     trx: HikariTransactor[IO] <- Database.transactor(appConfig)
+    
+    redisResource = RedisDatabase.commands(appConfig)
 
-    repoCollection <- Resource.eval(IO(RepositoryCollection.instantiateRepository(trx)))
+    repoCollection <- Resource.eval(IO(RepositoryCollection.instantiateRepository(trx, redisResource)))
 
     serviceCollection <- Resource.eval(IO(ServiceCollection.instantiateServices(appConfig, repoCollection)))
 
@@ -45,7 +47,7 @@ object Server {
     server <- EmberServerBuilder
       .default[IO]
       .withHost(ipv4"0.0.0.0")
-      .withPort(port"8080")
+      .withPort(port"8018")
       .withHttpWebSocketApp { wsb =>
         (healthRoute <+>
           UnifiedRoutes.instantiateRoutes(wsb, wsBuffer, middlewareCollection, serviceCollection).getRoutes)

@@ -9,7 +9,7 @@ object ServiceCollection {
   def instantiateServices(appConfig: AppConfig, repositoryCollection: RepositoryCollection): ServiceCollection = {
     val userService = UserService.of(repositoryCollection.userRepository)
     val gameService = GameService.of(repositoryCollection.gameRepository, repositoryCollection.boardHistoryRepository)
-    val authenticationService = AuthenticationService.of(appConfig.jwt, repositoryCollection.userRepository)
+    val authenticationService = AuthenticationService.of(appConfig.jwt, repositoryCollection.userRepository, repositoryCollection.tokenRepository)
     ServiceCollection(
       userService = userService,
       gameService = gameService,

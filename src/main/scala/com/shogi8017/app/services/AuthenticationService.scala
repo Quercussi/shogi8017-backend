@@ -6,11 +6,11 @@ import com.shogi8017.app.JwtConfig
 import com.shogi8017.app.exceptions.IncorrectUsernameOrPassword
 import com.shogi8017.app.jwtClaimModels.UserClaimModel
 import com.shogi8017.app.models.UserModel
-import com.shogi8017.app.repository.UserRepository
+import com.shogi8017.app.repository.{TokenRepository, UserRepository}
 import com.shogi8017.app.routes.{UserLoginPayload, UserLoginResponse, WebSocketResponsePayload}
 import pdi.jwt.{JwtAlgorithm, JwtCirce}
 
-class AuthenticationService(jwtConfig: JwtConfig, userRepository: UserRepository) {
+class AuthenticationService(jwtConfig: JwtConfig, userRepository: UserRepository, tokenRepository: TokenRepository) {
   private val jwtAlgorithm = JwtAlgorithm.fromString(jwtConfig.algorithm.getOrElse("HS256"))
   private val userService = UserService.of(userRepository)
 
@@ -52,16 +52,19 @@ class AuthenticationService(jwtConfig: JwtConfig, userRepository: UserRepository
     )
   }
 
-  def getUserWebsocketToken(userModel: UserModel): WebSocketResponsePayload = {
+  def getUserWebsocketToken(userModel: UserModel): EitherT[IO, Throwable, WebSocketResponsePayload] = {
     val userClaimModel = UserClaimModel.of(userModel)
+    val ttlSeconds = jwtConfig.websocketAccessTokenTtlSeconds
 
-    val websocketAccessClaim = userClaimModel.asJwtClaim(jwtConfig.websocketAccessTokenTtlSeconds)
+    val websocketAccessClaim = userClaimModel.asJwtClaim(ttlSeconds)
     val websocketAccessTokenExpiry = websocketAccessClaim.expiration.getOrElse(0L)
     val websocketAccessToken = getWebSocketAccessToken(userModel)
 
-    WebSocketResponsePayload(
-      websocketAccessToken = websocketAccessToken,
-      websocketAccessTokenExpiry = websocketAccessTokenExpiry
+    tokenRepository.storeWebSocketToken(websocketAccessToken, ttlSeconds).map(_ =>
+      WebSocketResponsePayload(
+        websocketAccessToken = websocketAccessToken,
+        websocketAccessTokenExpiry = websocketAccessTokenExpiry
+      )
     )
   }
 
@@ -76,6 +79,6 @@ class AuthenticationService(jwtConfig: JwtConfig, userRepository: UserRepository
 }
 
 object AuthenticationService {
-  def of(jwtConfig: JwtConfig, userRepository: UserRepository): AuthenticationService = new AuthenticationService(jwtConfig, userRepository)
+  def of(jwtConfig: JwtConfig, userRepository: UserRepository, tokenRepository: TokenRepository): AuthenticationService = new AuthenticationService(jwtConfig, userRepository, tokenRepository)
 }
 
