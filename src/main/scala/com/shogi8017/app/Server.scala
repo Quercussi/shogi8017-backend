@@ -38,7 +38,7 @@ object Server {
 
     serviceCollection <- Resource.eval(IO(ServiceCollection.instantiateServices(appConfig, repoCollection)))
 
-    middlewareCollection <- Resource.eval(IO(MiddlewareCollection.instantiateMiddlewares(appConfig.jwt)))
+    middlewareCollection <- Resource.eval(IO(MiddlewareCollection.instantiateMiddlewares(appConfig.jwt, repoCollection)))
 
     wsBuffer <- WebSocketRouteBuffer.resource
 
